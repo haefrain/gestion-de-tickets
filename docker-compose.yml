@@ -67,11 +67,11 @@ services:
       dockerfile: docker/Dockerfile.web
     volumes:
       - ./apps/web:/app
-      - /app/node_modules
+      - web_node_modules:/app/node_modules
     ports:
       - "${WEB_PORT:-5173}:5173"
-    # F0: placeholder que mantiene vivo el contenedor. El dev server (npm run dev) llega en F3.
-    command: ["sh", "-c", "echo 'web: placeholder F0 — Vite se materializa en F3' && tail -f /dev/null"]
+    # F3: dev server de Vite (deps instaladas por `make up`/`make web-install`).
+    command: ["sh", "-lc", "npm run dev -- --host 0.0.0.0 --port 5173"]
     healthcheck:
       test: ["CMD-SHELL", "node -v >/dev/null 2>&1 || exit 1"]
       interval: 15s
@@ -206,3 +206,4 @@ volumes:
   redis_data:
   rabbitmq_data:
   elasticsearch_data:
+  web_node_modules:
