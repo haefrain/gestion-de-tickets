@@ -11,7 +11,7 @@ use Symfony\Component\PasswordHasher\Hasher\SodiumPasswordHasher;
 /**
  * Adaptador del puerto PasswordHasher con Argon2id (libsodium).
  */
-final class SymfonyPasswordHasher implements PasswordHasher
+final readonly class SymfonyPasswordHasher implements PasswordHasher
 {
     private SodiumPasswordHasher $hasher;
 

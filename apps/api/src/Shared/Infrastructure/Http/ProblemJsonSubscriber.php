@@ -57,7 +57,7 @@ final class ProblemJsonSubscriber
             $previous instanceof ValidationFailedException => $previous,
             default => null,
         };
-        if (null === $failed) {
+        if (!$failed instanceof ValidationFailedException) {
             return null;
         }
 
