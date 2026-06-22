@@ -1,0 +1,11 @@
+# Frontend — Node 24 (React 19 + Vite)
+FROM node:24-bookworm-slim
+
+WORKDIR /app
+
+# Puerto del dev server de Vite (se materializa en F3)
+EXPOSE 5173
+
+# En F0 el contenedor solo deja listo el runtime de Node.
+# El comando real (`npm run dev`) se define en F3.
+CMD ["node"]

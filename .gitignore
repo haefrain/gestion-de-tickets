@@ -1,0 +1,33 @@
+# ── Dependencias ──
+/vendor/
+/apps/api/vendor/
+/node_modules/
+/apps/web/node_modules/
+
+# ── Entorno ──
+.env
+.env.local
+*.env.local
+
+# ── Symfony (backend) ──
+/apps/api/var/
+/apps/api/public/bundles/
+/apps/api/config/secrets/*/*.php
+/apps/api/.phpunit.result.cache
+/apps/api/.php-cs-fixer.cache
+
+# ── Frontend ──
+/apps/web/dist/
+/apps/web/storybook-static/
+/apps/web/coverage/
+/apps/web/.vite/
+
+# ── Claude Code (overrides personales) ──
+.claude/settings.local.json
+
+# ── CodeGraph (índice local regenerable) ──
+/.codegraph/
+
+# ── Sistema ──
+.DS_Store
+*.log

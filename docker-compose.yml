@@ -1,0 +1,173 @@
+name: tickets-iatsae
+
+services:
+  # ── Backend (PHP 8.4-FPM / Symfony) ──
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    volumes:
+      - ./apps/api:/var/www/api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "php -v >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  # ── Frontend (Node 24 / Vite) ──
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    # F0: placeholder que mantiene vivo el contenedor. El dev server (npm run dev) llega en F3.
+    command: ["sh", "-c", "echo 'web: placeholder F0 — Vite se materializa en F3' && tail -f /dev/null"]
+    healthcheck:
+      test: ["CMD-SHELL", "node -v >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # ── PostgreSQL ──
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-tickets}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tickets}
+      POSTGRES_DB: ${POSTGRES_DB:-tickets}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # ── Redis ──
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  # ── RabbitMQ (con panel de gestión) ──
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-tickets}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-tickets}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ── Elasticsearch 8.x (single-node, seguridad desactivada para local) ──
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "${ELASTIC_PORT:-9200}:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    restart: unless-stopped
+
+  # ── GlitchTip · migraciones (one-shot) ──
+  glitchtip-migrate:
+    image: glitchtip/glitchtip:6.2.0
+    command: ["./manage.py", "migrate"]
+    environment: &glitchtip_env
+      DATABASE_URL: postgres://${POSTGRES_USER:-tickets}:${POSTGRES_PASSWORD:-tickets}@postgres:5432/${GLITCHTIP_DB:-glitchtip}
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${GLITCHTIP_SECRET_KEY:-dev-change-me-please-32chars-minimum}
+      PORT: "8080"
+      EMAIL_URL: consolemail://
+      GLITCHTIP_DOMAIN: ${GLITCHTIP_DOMAIN:-http://localhost:8000}
+      DEFAULT_FROM_EMAIL: noreply@tickets.local
+      CELERY_WORKER_AUTOSCALE: "1,3"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: "no"
+
+  # ── GlitchTip · servidor web ──
+  glitchtip:
+    image: glitchtip/glitchtip:6.2.0
+    environment: *glitchtip_env
+    ports:
+      - "${GLITCHTIP_PORT:-8000}:8080"
+    depends_on:
+      glitchtip-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8080/_health/').status==200 else 1)\" || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 45s
+    restart: unless-stopped
+
+  # ── GlitchTip · worker (Celery + beat) ──
+  glitchtip-worker:
+    image: glitchtip/glitchtip:6.2.0
+    command: ["./bin/run-celery-with-beat.sh"]
+    environment: *glitchtip_env
+    depends_on:
+      glitchtip-migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  elasticsearch_data:
