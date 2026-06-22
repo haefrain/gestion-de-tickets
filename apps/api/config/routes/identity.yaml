@@ -1,0 +1,6 @@
+# Rutas del contexto Identity (L1).
+
+api_register:
+    path: /api/v1/register
+    controller: App\Identity\Infrastructure\Http\RegisterController
+    methods: [POST]
