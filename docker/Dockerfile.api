@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Instalador robusto de extensiones PHP (mlocati)
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
-# Extensiones del stack: PostgreSQL, intl, zip, opcache, Redis, AMQP + Composer
+# Extensiones del stack: PostgreSQL, intl, zip, opcache, Redis, AMQP, PCOV (cobertura) + Composer
 RUN install-php-extensions \
         pdo_pgsql \
         intl \
@@ -19,9 +19,10 @@ RUN install-php-extensions \
         opcache \
         redis \
         amqp \
+        pcov \
         @composer
 
 WORKDIR /var/www/api
 
-# La imagen base ejecuta `php-fpm` en primer plano (CMD heredado).
-# El walking skeleton HTTP (nginx + public/index.php) se añade en F2.
+# La imagen base ejecuta `php-fpm` en primer plano (CMD heredado), escuchando en :9000.
+# El HTTP lo sirve el servicio `api-nginx` (docker-compose.yml), que proxea FastCGI a php-fpm.

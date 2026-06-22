@@ -1,0 +1,11 @@
+# Walking skeleton (F2). Rutas explícitas a controllers invocables.
+
+api_health:
+    path: /api/v1/health
+    controller: App\Shared\Infrastructure\Http\HealthController
+    methods: [GET]
+
+api_health_ready:
+    path: /api/v1/health/ready
+    controller: App\Shared\Infrastructure\Http\ReadinessController
+    methods: [GET]

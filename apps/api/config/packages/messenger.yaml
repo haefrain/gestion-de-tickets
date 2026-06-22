@@ -1,0 +1,41 @@
+framework:
+    messenger:
+        default_bus: command.bus
+        buses:
+            # Escritura: un handler obligatorio, en transacción Doctrine y con validación.
+            command.bus:
+                middleware:
+                    - validation
+                    - doctrine_transaction
+            # Lectura: un handler obligatorio, devuelve resultado.
+            query.bus:
+                default_middleware:
+                    enabled: true
+                    allow_no_handlers: false
+            # Eventos de dominio: async; en F2 aún no hay consumidores.
+            event.bus:
+                default_middleware:
+                    enabled: true
+                    allow_no_handlers: true
+
+        transports:
+            # Transporte async para eventos de dominio (RabbitMQ). En F2 nada se rutea aquí
+            # todavía, así que el contenedor arranca sin abrir conexión al broker.
+            async_events:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000
+                    multiplier: 2
+            failed: 'doctrine://default?queue_name=failed'
+
+        failure_transport: failed
+
+        routing:
+            # Los eventos de dominio se enrutarán a async_events en F6 (cuando existan).
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                async_events: 'in-memory://'
