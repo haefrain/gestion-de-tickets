@@ -12,20 +12,11 @@ use App\Shared\Domain\AggregateRoot;
  */
 final class User extends AggregateRoot
 {
-    /** @var list<Role> */
-    private array $roles;
-
     /**
      * @param list<Role> $roles
      */
-    private function __construct(
-        private readonly UserId $id,
-        private readonly Email $email,
-        private HashedPassword $password,
-        private readonly ?string $name,
-        array $roles,
-    ) {
-        $this->roles = $roles;
+    private function __construct(private readonly UserId $id, private readonly Email $email, private readonly HashedPassword $password, private readonly ?string $name, private readonly array $roles)
+    {
     }
 
     public static function register(UserId $id, Email $email, HashedPassword $password, ?string $name): self
@@ -76,12 +67,6 @@ final class User extends AggregateRoot
 
     public function hasRole(Role $role): bool
     {
-        foreach ($this->roles as $owned) {
-            if ($owned->equals($role)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($this->roles, static fn ($owned) => $owned->equals($role));
     }
 }

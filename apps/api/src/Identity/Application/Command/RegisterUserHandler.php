@@ -29,7 +29,7 @@ final readonly class RegisterUserHandler implements CommandHandler
     {
         $email = new Email($command->email);
 
-        if (null !== $this->users->ofEmail($email)) {
+        if ($this->users->ofEmail($email) instanceof User) {
             throw EmailAlreadyInUse::forEmail($command->email);
         }
 
