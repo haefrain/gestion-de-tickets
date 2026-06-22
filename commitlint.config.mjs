@@ -5,5 +5,7 @@ export default {
     // Los cuerpos de commit del proyecto incluyen listas y rutas largas.
     'body-max-line-length': [0, 'always'],
     'footer-max-line-length': [0, 'always'],
+    // Los subjects pueden empezar con acrónimos (CI/CD, JWT, ...).
+    'subject-case': [0, 'always'],
   },
 };

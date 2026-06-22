@@ -45,8 +45,16 @@ jobs:
           cat > .env <<'EOF'
           APP_ENV=dev
           APP_SECRET=ci-not-a-real-secret
+          DEFAULT_URI=http://localhost
           DATABASE_URL="postgresql://tickets:tickets@127.0.0.1:5432/tickets?serverVersion=16&charset=utf8"
+          REDIS_URL=redis://127.0.0.1:6379
+          ELASTICSEARCH_URL=http://127.0.0.1:9200
           MESSENGER_TRANSPORT_DSN=amqp://tickets:tickets@127.0.0.1:5672/%2f/messages
+          RABBITMQ_HOST=127.0.0.1
+          RABBITMQ_PORT=5672
+          RABBITMQ_USER=tickets
+          RABBITMQ_PASSWORD=tickets
+          RABBITMQ_VHOST=/
           JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
           JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
           JWT_PASSPHRASE=ci-not-a-real-secret
