@@ -27,6 +27,9 @@ services:
     App\Shared\Infrastructure\Http\HealthController:
         tags: ['controller.service_arguments']
 
+    App\Identity\Infrastructure\Http\RegisterController:
+        tags: ['controller.service_arguments']
+
     App\Shared\Infrastructure\Http\ReadinessController:
         arguments:
             $checks: !tagged_iterator app.health_check
@@ -48,6 +51,10 @@ services:
     App\Shared\Application\Bus\QueryBus: '@App\Shared\Infrastructure\Bus\MessengerQueryBus'
     App\Shared\Application\Bus\EventBus: '@App\Shared\Infrastructure\Bus\MessengerEventBus'
     App\Shared\Application\Clock\Clock: '@App\Shared\Infrastructure\Clock\SystemClock'
+
+    # ── Identity: puertos -> adaptadores ──
+    App\Identity\Application\Port\UserRepository: '@App\Identity\Infrastructure\Persistence\Doctrine\DoctrineUserRepository'
+    App\Identity\Application\Port\PasswordHasher: '@App\Identity\Infrastructure\Security\SymfonyPasswordHasher'
 
     # ── Readiness: adaptadores etiquetados para el tagged_iterator del ReadinessController ──
     App\Shared\Infrastructure\Health\PostgresHealthCheck:
