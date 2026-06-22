@@ -1,0 +1,27 @@
+# Backend — PHP 8.4-FPM (Symfony 7.4)
+FROM php:8.4-fpm
+
+# Utilidades del sistema para Composer y compilación de extensiones
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git \
+        unzip \
+        libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalador robusto de extensiones PHP (mlocati)
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
+
+# Extensiones del stack: PostgreSQL, intl, zip, opcache, Redis, AMQP + Composer
+RUN install-php-extensions \
+        pdo_pgsql \
+        intl \
+        zip \
+        opcache \
+        redis \
+        amqp \
+        @composer
+
+WORKDIR /var/www/api
+
+# La imagen base ejecuta `php-fpm` en primer plano (CMD heredado).
+# El walking skeleton HTTP (nginx + public/index.php) se añade en F2.
