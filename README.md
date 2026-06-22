@@ -2,7 +2,7 @@
 
 Monorepo de una plataforma de tickets. **Backend protagonista** (Symfony, arquitectura hexagonal + DDD) + frontend de apoyo (React). La definición completa y fuente de verdad vive en [`docs/`](./docs).
 
-> **Estado actual:** Fase **F2 — Esqueleto del backend**. El backend Symfony 7.4 (arquitectura hexagonal, buses CQRS, walking skeleton de salud) está montado y servido por nginx en `apps/api`; el frontend (`apps/web`) se materializa en F3 (ver [`docs/plan-implementacion.md`](./docs/plan-implementacion.md)).
+> **Estado actual:** Fase **F3 — Esqueleto del frontend**. El backend Symfony 7.4 (hexagonal, CQRS, walking skeleton) corre en `apps/api` (servido por nginx); el frontend React 19 + MUI + Storybook en `apps/web` aporta el design system reutilizable (tema índigo claro/oscuro, layout, moléculas y organismos) con su galería de Storybook. El cableado de datos con la API (TanStack Query) llega en F6 (ver [`docs/plan-implementacion.md`](./docs/plan-implementacion.md)).
 
 ## Requisitos
 
@@ -31,14 +31,14 @@ cp .env.example .env   # opcional: edita los valores que necesites
 |---|---|---|---|
 | **api** | PHP 8.4-FPM (build local) | — (FastCGI 9000) | runtime PHP listo |
 | **api-nginx** | nginx 1.27-alpine | `8080` | `GET /api/v1/health` |
-| **web** | Node 24 (build local) | `5173` | runtime Node listo |
+| **web** | Node 24 (build local) | `5173` | dev server de Vite (React 19) |
 | **postgres** | postgres:16-alpine | `5432` | `pg_isready` |
 | **redis** | redis:7-alpine | `6379` | `redis-cli ping` |
 | **rabbitmq** | rabbitmq:3.13-management | `5672` · `15672` (panel) | `rabbitmq-diagnostics ping` |
 | **elasticsearch** | elasticsearch:8.15 | `9200` | `_cluster/health` |
 | **glitchtip** | glitchtip/glitchtip | `8000` | `/_health/` |
 
-> **Nota:** desde F2, `api-nginx` sirve la API en `http://localhost:8080/api/v1/health` (liveness) y `/api/v1/health/ready` (readiness: pinguea PostgreSQL/Redis/RabbitMQ/Elasticsearch). El contenedor `web` aún solo deja listo el runtime; su dev server de Vite se activa en F3. GlitchTip comparte la instancia de PostgreSQL con una base de datos dedicada y se apoya en un contenedor de migraciones (one-shot) y un worker de Celery.
+> **Nota:** `api-nginx` sirve la API en `http://localhost:8080/api/v1/health` (liveness) y `/api/v1/health/ready` (readiness: pinguea PostgreSQL/Redis/RabbitMQ/Elasticsearch). Desde F3, `web` sirve la SPA en `http://localhost:5173` (Vite) y el Storybook del design system se levanta con `make storybook` (`http://localhost:6006`). GlitchTip comparte la instancia de PostgreSQL con una base de datos dedicada y se apoya en un contenedor de migraciones (one-shot) y un worker de Celery.
 
 ## Comandos `make`
 
@@ -50,13 +50,16 @@ cp .env.example .env   # opcional: edita los valores que necesites
 | `make ps` | Estado de los servicios |
 | `make logs s=<servicio>` | Logs en vivo de un servicio |
 | `make sh s=<servicio>` | Shell dentro de un servicio |
-| `make api-install` | Instala las dependencias Composer del backend |
+| `make test` | Tests de **backend + frontend** |
+| `make lint` | Análisis estático de **backend + frontend** |
+| `make lint-fix` | Autofix de backend (CS-Fixer/Rector) + frontend (Prettier) |
+| `make storybook` | Levanta Storybook del frontend (`http://localhost:6006`) |
+| `make api-install` / `make web-install` | Instala dependencias de backend / frontend |
 | `make jwt-keys` | Genera el par de claves JWT RS256 (no versionado) |
-| `make test` | Smoke backend: Unit + Functional (sin servicios externos) |
-| `make test-cov` | Smoke backend con informe de cobertura (PCOV) |
-| `make test-integration` | Tests de integración (requiere `make up`) |
-| `make lint` | PHPStan 9 + CS-Fixer + Rector + Deptrac + composer audit |
-| `make lint-fix` | Autofix de estilo (CS-Fixer) y modernización (Rector) |
+| `make test-api` / `make test-web` | Tests solo de backend / frontend |
+| `make lint-api` / `make lint-web` | Lint solo de backend / frontend |
+| `make test-integration` | Tests de integración del backend (requiere `make up`) |
+| `make build-web` | Build de producción del frontend |
 | `make seed` | Datos de demo (F6) |
 
 ## Estructura
