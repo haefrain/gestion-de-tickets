@@ -12,4 +12,6 @@ use App\Identity\Domain\HashedPassword;
 interface PasswordHasher
 {
     public function hash(string $plainPassword): HashedPassword;
+
+    public function verify(string $plainPassword, HashedPassword $hashed): bool;
 }
