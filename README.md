@@ -1,8 +1,10 @@
 # Sistema de Gestión de Tickets — IATSAE
 
+[![CI](https://github.com/haefrain/gestion-de-tickets/actions/workflows/ci.yml/badge.svg)](https://github.com/haefrain/gestion-de-tickets/actions/workflows/ci.yml)
+
 Monorepo de una plataforma de tickets. **Backend protagonista** (Symfony, arquitectura hexagonal + DDD) + frontend de apoyo (React). La definición completa y fuente de verdad vive en [`docs/`](./docs).
 
-> **Estado actual:** Fase **F3 — Esqueleto del frontend**. El backend Symfony 7.4 (hexagonal, CQRS, walking skeleton) corre en `apps/api` (servido por nginx); el frontend React 19 + MUI + Storybook en `apps/web` aporta el design system reutilizable (tema índigo claro/oscuro, layout, moléculas y organismos) con su galería de Storybook. El cableado de datos con la API (TanStack Query) llega en F6 (ver [`docs/plan-implementacion.md`](./docs/plan-implementacion.md)).
+> **Estado actual:** Fase **F4 — CI/CD y guardarraíles**. Backend Symfony 7.4 (hexagonal, CQRS) en `apps/api` + frontend React 19 + MUI + Storybook en `apps/web`, ambos con **CI bloqueante en GitHub Actions** (lint, análisis estático, tests, cobertura ≥80% en dominio/aplicación, build y E2E). El cableado de datos con la API y las HU llegan en F6 (ver [`docs/plan-implementacion.md`](./docs/plan-implementacion.md)).
 
 ## Requisitos
 
@@ -78,6 +80,12 @@ cp .env.example .env   # opcional: edita los valores que necesites
 ├── Makefile
 └── .env.example
 ```
+
+## Calidad automatizada (CI)
+
+Cada Pull Request a `main` dispara [GitHub Actions](.github/workflows/ci.yml) con cuatro jobs **bloqueantes**: `commitlint` (Conventional Commits), `backend` (PHPStan 9 · CS-Fixer · Rector · Deptrac · `composer audit` · PHPUnit + cobertura ≥80% en dominio/aplicación), `frontend` (Prettier · ESLint · TypeScript strict · Vitest · build · Storybook) y `e2e` (Playwright). `main` está protegida: no se fusiona sin el pipeline en verde.
+
+**Pre-commit (opcional, requiere Node en el host):** `npm install` en la raíz activa los hooks de Husky — `commit-msg` valida Conventional Commits y `pre-commit` formatea con Prettier los archivos del frontend en *stage*.
 
 ## Documentación
 
