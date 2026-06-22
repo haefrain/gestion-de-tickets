@@ -1,0 +1,17 @@
+includes:
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+    - vendor/phpstan/phpstan-symfony/extension.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
+
+parameters:
+    level: 9
+    paths:
+        - src
+        - tests
+    excludePaths:
+        # Bootstrap generado por el recipe de PHPUnit (código de framework).
+        - tests/bootstrap.php
+    tmpDir: var/cache/phpstan
+    # phpstan-doctrine + objectManagerLoader y symfony.containerXmlPath se añaden en F6,
+    # cuando existan entidades y un contenedor compilado que analizar.
