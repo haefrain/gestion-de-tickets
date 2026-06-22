@@ -4,3 +4,8 @@ api_register:
     path: /api/v1/register
     controller: App\Identity\Infrastructure\Http\RegisterController
     methods: [POST]
+
+api_login:
+    path: /api/v1/login
+    controller: App\Identity\Infrastructure\Http\LoginController
+    methods: [POST]
