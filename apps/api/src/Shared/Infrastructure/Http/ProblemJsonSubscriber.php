@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Shared\Infrastructure\Http;
 
 use App\Shared\Domain\ConflictException;
+use App\Shared\Domain\UnauthorizedException;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,6 +22,12 @@ final class ProblemJsonSubscriber
     public function __invoke(ExceptionEvent $event): void
     {
         $throwable = $event->getThrowable();
+
+        if ($throwable instanceof UnauthorizedException) {
+            $event->setResponse($this->problem(Response::HTTP_UNAUTHORIZED, 'No autorizado', 'Credenciales inválidas o ausentes.'));
+
+            return;
+        }
 
         if ($throwable instanceof ConflictException) {
             $event->setResponse($this->problem(Response::HTTP_CONFLICT, 'Conflicto de estado', 'El recurso ya existe o entra en conflicto.'));
