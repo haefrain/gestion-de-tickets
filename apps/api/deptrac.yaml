@@ -1,0 +1,26 @@
+# Deptrac: hace cumplir la regla de dependencia hexagonal (Infrastructure -> Application -> Domain).
+# Las capas de aislamiento por bounded context (sin cruces salvo vía Shared) se añaden en F6,
+# cuando los contextos Identity/Ticketing/Search/Notifications tengan código.
+deptrac:
+    paths:
+        - ./src
+    layers:
+        - name: Domain
+          collectors:
+            - type: directory
+              value: src/[^/]+/Domain/.*
+        - name: Application
+          collectors:
+            - type: directory
+              value: src/[^/]+/Application/.*
+        - name: Infrastructure
+          collectors:
+            - type: directory
+              value: src/[^/]+/Infrastructure/.*
+    ruleset:
+        Domain: ~
+        Application:
+            - Domain
+        Infrastructure:
+            - Application
+            - Domain
