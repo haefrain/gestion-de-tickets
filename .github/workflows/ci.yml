@@ -40,6 +40,18 @@ jobs:
           coverage: pcov
           tools: composer:v2
 
+      - name: Preparar entorno de CI (.env efímero, sin secretos reales)
+        run: |
+          cat > .env <<'EOF'
+          APP_ENV=dev
+          APP_SECRET=ci-not-a-real-secret
+          DATABASE_URL="postgresql://tickets:tickets@127.0.0.1:5432/tickets?serverVersion=16&charset=utf8"
+          MESSENGER_TRANSPORT_DSN=amqp://tickets:tickets@127.0.0.1:5672/%2f/messages
+          JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
+          JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
+          JWT_PASSPHRASE=ci-not-a-real-secret
+          EOF
+
       - name: Cache de Composer
         uses: actions/cache@v4
         with:
