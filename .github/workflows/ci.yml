@@ -1,0 +1,164 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  commitlint:
+    name: Commits convencionales
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: wagoid/commitlint-github-action@v6
+
+  backend:
+    name: Backend · PHP 8.4
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, intl, zip, redis, amqp, pcov
+          coverage: pcov
+          tools: composer:v2
+
+      - name: Preparar entorno de CI (.env efímero, sin secretos reales)
+        run: |
+          cat > .env <<'EOF'
+          APP_ENV=dev
+          APP_SECRET=ci-not-a-real-secret
+          DEFAULT_URI=http://localhost
+          DATABASE_URL="postgresql://tickets:tickets@127.0.0.1:5432/tickets?serverVersion=16&charset=utf8"
+          REDIS_URL=redis://127.0.0.1:6379
+          ELASTICSEARCH_URL=http://127.0.0.1:9200
+          MESSENGER_TRANSPORT_DSN=amqp://tickets:tickets@127.0.0.1:5672/%2f/messages
+          RABBITMQ_HOST=127.0.0.1
+          RABBITMQ_PORT=5672
+          RABBITMQ_USER=tickets
+          RABBITMQ_PASSWORD=tickets
+          RABBITMQ_VHOST=/
+          JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
+          JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
+          JWT_PASSPHRASE=ci-not-a-real-secret
+          EOF
+
+      - name: Cache de Composer
+        uses: actions/cache@v4
+        with:
+          path: apps/api/vendor
+          key: composer-${{ hashFiles('apps/api/composer.lock') }}
+          restore-keys: composer-
+
+      - name: Instalar dependencias
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Generar claves JWT de test
+        run: php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction
+
+      - name: PHPStan (nivel 9)
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+
+      - name: PHP-CS-Fixer (check)
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff
+        env:
+          PHP_CS_FIXER_IGNORE_ENV: 1
+
+      - name: Rector (check)
+        run: vendor/bin/rector process --dry-run --no-progress-bar
+
+      - name: Deptrac (límites hexagonales)
+        run: vendor/bin/deptrac analyse --no-progress
+
+      - name: Composer audit
+        run: composer audit
+
+      - name: PHPUnit (Unit + Functional) + cobertura
+        run: vendor/bin/phpunit --testsuite Unit,Functional --coverage-clover var/coverage/clover.xml
+
+      - name: Gate de cobertura (Domain/Application ≥ 80%)
+        run: php bin/coverage-check.php 80 var/coverage/clover.xml
+
+  frontend:
+    name: Frontend · Node 24
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Prettier (check)
+        run: npm run format:check
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: TypeScript (strict)
+        run: npm run typecheck
+
+      - name: Vitest + cobertura
+        run: npm run test -- --coverage
+
+      - name: Build de producción
+        run: npm run build
+
+      - name: Build de Storybook
+        run: npm run build-storybook
+
+  e2e:
+    name: E2E · Playwright
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar navegador Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Build de producción
+        run: npm run build
+
+      - name: E2E (flujo principal sobre el build)
+        run: npx playwright test
+        env:
+          CI: 'true'
