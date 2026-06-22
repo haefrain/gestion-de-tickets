@@ -13,4 +13,9 @@ final class FakePasswordHasher implements PasswordHasher
     {
         return new HashedPassword('hashed:'.$plainPassword);
     }
+
+    public function verify(string $plainPassword, HashedPassword $hashed): bool
+    {
+        return $hashed->value() === 'hashed:'.$plainPassword;
+    }
 }
