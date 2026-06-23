@@ -1,0 +1,6 @@
+# Rutas del contexto Search (L3).
+
+api_search_tickets:
+    path: /api/v1/search/tickets
+    controller: App\Search\Infrastructure\Http\SearchTicketsController
+    methods: [GET]

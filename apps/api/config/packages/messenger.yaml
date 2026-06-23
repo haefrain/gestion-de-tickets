@@ -19,20 +19,23 @@ framework:
                     allow_no_handlers: true
 
         transports:
-            # Transporte async para eventos de dominio (RabbitMQ). En F2 nada se rutea aquí
-            # todavía, así que el contenedor arranca sin abrir conexión al broker.
+            # Transporte async para eventos de dominio (RabbitMQ, cola "indexing" del worker).
+            # Reintentos con backoff exponencial (HU-L4-E1-02): 1s, 2s, 4s.
             async_events:
                 dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
                 retry_strategy:
                     max_retries: 3
                     delay: 1000
                     multiplier: 2
+            # DLQ (dead-letter): agotados los reintentos, el mensaje se guarda aquí (HU-L4-E1-02).
             failed: 'doctrine://default?queue_name=failed'
 
         failure_transport: failed
 
         routing:
-            # Los eventos de dominio se enrutarán a async_events en F6 (cuando existan).
+            # Todo evento de dominio (implementa DomainEvent) viaja async a RabbitMQ (HU-L4-E1-01).
+            # El consumidor (Search\IndexTicketHandler) es idempotente: upsert por id en ES.
+            'App\Shared\Domain\DomainEvent': async_events
 
 when@test:
     framework:
