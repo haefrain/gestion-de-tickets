@@ -19,8 +19,8 @@ final class Ticket extends AggregateRoot
     private function __construct(
         private readonly TicketId $id,
         private readonly string $requesterId,
-        private string $title,
-        private string $description,
+        private readonly string $title,
+        private readonly string $description,
         private TicketStatus $status,
         private Priority $priority,
         private Category $category,

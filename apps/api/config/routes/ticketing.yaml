@@ -1,0 +1,6 @@
+# Rutas del contexto Ticketing (L2).
+
+api_tickets_create:
+    path: /api/v1/tickets
+    controller: App\Ticketing\Infrastructure\Http\CreateTicketController
+    methods: [POST]
