@@ -1,5 +1,5 @@
-// Listado de tickets conectado a la API (TanStack Query): búsqueda local, paginación por
-// cursor (stack para anterior/siguiente) y creación en un diálogo.
+// Listado de tickets conectado a la API. Filtros server-side (estado/prioridad) y modo búsqueda:
+// si hay texto, consulta /search/tickets (relevancia); si no, /tickets. Paginación por cursor.
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '@mui/material/Button';
@@ -18,23 +18,31 @@ import { DataState } from '../../shared/ui/feedback/DataState';
 import { TicketTable } from '../../shared/ui/tickets/TicketTable';
 import { CursorPagination } from '../../shared/ui/data-display/CursorPagination';
 import { FormField } from '../../shared/ui/inputs/FormField';
-import { PRIORITIES } from '../../shared/api/types';
-import type { Priority } from '../../shared/api/types';
-import { PRIORITY_LABEL } from '../../shared/theme/tokens';
+import { PRIORITIES, TICKET_STATUSES } from '../../shared/api/types';
+import type { Priority, TicketStatus } from '../../shared/api/types';
+import { PRIORITY_LABEL, STATUS_LABEL } from '../../shared/theme/tokens';
 import { ROUTES } from '../../app/router/routes';
-import { useCreateTicket, useTickets } from './api';
+import { useCreateTicket, useSearchTickets, useTickets } from './api';
 
 export function TicketListView() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
+  const [status, setStatus] = useState<TicketStatus | ''>('');
+  const [priority, setPriority] = useState<Priority | ''>('');
   const [cursors, setCursors] = useState<string[]>([]);
   const cursor = cursors.at(-1);
-  const { data, isLoading, isError } = useTickets({ cursor });
 
-  const tickets = data?.data ?? [];
-  const filtered = tickets.filter((ticket) => ticket.title.toLowerCase().includes(query.toLowerCase()));
+  const isSearching = query.trim() !== '';
+  const listResult = useTickets({ cursor, status, priority }, !isSearching);
+  const searchResult = useSearchTickets({ q: query, cursor, status, priority }, isSearching);
+  const active = isSearching ? searchResult : listResult;
 
+  const tickets = active.data?.data ?? [];
   const [creating, setCreating] = useState(false);
+
+  function resetPaging(): void {
+    setCursors([]);
+  }
 
   return (
     <PageContainer
@@ -46,20 +54,70 @@ export function TicketListView() {
       }
     >
       <Stack spacing={2}>
-        <SearchBar value={query} onChange={setQuery} />
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { sm: 'flex-start' } }}>
+          <Box sx={{ flexGrow: 1 }}>
+            <SearchBar
+              value={query}
+              onChange={(value) => {
+                setQuery(value);
+                resetPaging();
+              }}
+            />
+          </Box>
+          <Box sx={{ minWidth: 160 }}>
+            <FormField
+              name="status"
+              label="Estado"
+              value={status}
+              select
+              onChange={(value) => {
+                setStatus(value as TicketStatus | '');
+                resetPaging();
+              }}
+            >
+              <MenuItem value="">Todos</MenuItem>
+              {TICKET_STATUSES.map((value) => (
+                <MenuItem key={value} value={value}>
+                  {STATUS_LABEL[value]}
+                </MenuItem>
+              ))}
+            </FormField>
+          </Box>
+          <Box sx={{ minWidth: 160 }}>
+            <FormField
+              name="priority"
+              label="Prioridad"
+              value={priority}
+              select
+              onChange={(value) => {
+                setPriority(value as Priority | '');
+                resetPaging();
+              }}
+            >
+              <MenuItem value="">Todas</MenuItem>
+              {PRIORITIES.map((value) => (
+                <MenuItem key={value} value={value}>
+                  {PRIORITY_LABEL[value]}
+                </MenuItem>
+              ))}
+            </FormField>
+          </Box>
+        </Stack>
+
         <DataState
-          loading={isLoading}
-          error={isError ? 'No se pudieron cargar los tickets.' : null}
-          empty={filtered.length === 0}
+          loading={active.isLoading}
+          error={active.isError ? 'No se pudieron cargar los tickets.' : null}
+          empty={tickets.length === 0}
           emptyMessage="No hay tickets que coincidan con la búsqueda."
         >
-          <TicketTable tickets={filtered} onRowClick={(ticket) => navigate(ROUTES.ticketDetail(ticket.id))} />
+          <TicketTable tickets={tickets} onRowClick={(ticket) => navigate(ROUTES.ticketDetail(ticket.id))} />
         </DataState>
+
         <CursorPagination
-          hasMore={data?.page.hasMore ?? false}
+          hasMore={active.data?.page.hasMore ?? false}
           hasPrev={cursors.length > 0}
           onNext={() => {
-            const next = data?.page.nextCursor;
+            const next = active.data?.page.nextCursor;
             if (next !== null && next !== undefined) setCursors((prev) => [...prev, next]);
           }}
           onPrev={() => setCursors((prev) => prev.slice(0, -1))}

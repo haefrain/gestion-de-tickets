@@ -13,7 +13,8 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Tickets', to: ROUTES.tickets },
-  { label: 'Administración', to: '/admin', roles: ['admin'] },
+  { label: 'Mi perfil', to: ROUTES.profile },
+  { label: 'Administración', to: ROUTES.admin, roles: ['admin'] },
 ];
 
 export interface NavMenuProps {

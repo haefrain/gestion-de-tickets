@@ -5,6 +5,7 @@ import { LoginView } from '../../features/auth/LoginView';
 import { RegisterView } from '../../features/auth/RegisterView';
 import { TicketListView } from '../../features/tickets/TicketListView';
 import { TicketDetailView } from '../../features/tickets/TicketDetailView';
+import { ProfileView } from '../../features/profile/ProfileView';
 import { AdminView } from '../../features/admin/AdminView';
 import { useAuth } from '../../features/auth/auth-context';
 import { RequireAuth } from '../RequireAuth';
@@ -34,8 +35,9 @@ export function AppRouter() {
         >
           <Route path={ROUTES.tickets} element={<TicketListView />} />
           <Route path={ROUTES.ticketDetailPattern} element={<TicketDetailView />} />
+          <Route path={ROUTES.profile} element={<ProfileView />} />
           <Route
-            path="/admin"
+            path={ROUTES.admin}
             element={
               <RequireAuth roles={['admin']}>
                 <AdminView />
