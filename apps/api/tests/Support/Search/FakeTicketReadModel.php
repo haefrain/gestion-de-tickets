@@ -21,4 +21,9 @@ final class FakeTicketReadModel implements TicketReadModel
     {
         return $this->documents[$ticketId] ?? null;
     }
+
+    public function iterateAll(): iterable
+    {
+        return array_values($this->documents);
+    }
 }

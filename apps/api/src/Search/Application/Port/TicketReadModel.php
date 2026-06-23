@@ -13,4 +13,11 @@ use App\Search\Domain\TicketDocument;
 interface TicketReadModel
 {
     public function find(string $ticketId): ?TicketDocument;
+
+    /**
+     * Recorre todos los tickets (para el reindexado completo). Generador para no cargar todo en memoria.
+     *
+     * @return iterable<TicketDocument>
+     */
+    public function iterateAll(): iterable;
 }
