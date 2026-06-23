@@ -187,6 +187,9 @@ jobs:
           done
           echo "Elasticsearch no respondió a tiempo"; exit 1
 
+      - name: Crear la base de datos de test
+        run: php bin/console doctrine:database:create --if-not-exists
+
       - name: Migrar la base de datos
         run: php bin/console doctrine:migrations:migrate --no-interaction
 
