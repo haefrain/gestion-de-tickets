@@ -1,6 +1,8 @@
 # yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
 
 parameters:
+    # Secure de la cookie de refresh (ADR 0006): off en dev (HTTP), on en prod (HTTPS).
+    app.refresh_cookie_secure: false
 
 services:
     _defaults:
@@ -65,6 +67,10 @@ services:
         arguments:
             $ttl: 900
 
+    App\Identity\Infrastructure\Http\RefreshTokenCookie:
+        arguments:
+            $secure: '%app.refresh_cookie_secure%'
+
     # ── Readiness: adaptadores etiquetados para el tagged_iterator del ReadinessController ──
     App\Shared\Infrastructure\Health\PostgresHealthCheck:
         tags: ['app.health_check']
@@ -93,3 +99,7 @@ services:
                 login: '%env(RABBITMQ_USER)%'
                 password: '%env(RABBITMQ_PASSWORD)%'
                 vhost: '%env(RABBITMQ_VHOST)%'
+
+when@prod:
+    parameters:
+        app.refresh_cookie_secure: true
