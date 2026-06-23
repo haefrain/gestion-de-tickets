@@ -113,6 +113,13 @@ services:
     App\Identity\Application\Port\AccessTokenIssuer: '@App\Identity\Infrastructure\Security\LexikAccessTokenIssuer'
     App\Identity\Application\Port\RefreshTokenStore: '@App\Identity\Infrastructure\Security\RedisRefreshTokenStore'
 
+    # ── Notifications (L4-E2): puertos -> adaptadores ──
+    App\Notifications\Application\Port\Recipients: '@App\Notifications\Infrastructure\Persistence\Doctrine\DoctrineRecipients'
+    App\Notifications\Application\Port\Notifier: '@App\Notifications\Infrastructure\Notifier\MailerNotifier'
+    App\Notifications\Infrastructure\Notifier\MailerNotifier:
+        arguments:
+            $fromAddress: 'noreply@tickets.local'
+
     # ── Search (L3): puertos -> adaptadores ──
     # Índice de búsqueda sobre Elasticsearch; origen de (re)indexado sobre la tabla tickets.
     App\Search\Application\Port\SearchIndex: '@App\Search\Infrastructure\Elasticsearch\ElasticsearchIndex'
