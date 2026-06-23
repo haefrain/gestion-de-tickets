@@ -14,7 +14,7 @@ final class ListTicketsHandlerTest extends TestCase
 {
     private function view(string $id, string $requesterId): TicketView
     {
-        return new TicketView($id, 'T', 'D', 'open', 'medium', 'general', $requesterId, null, '2026-06-22T10:00:00+00:00', '2026-06-22T10:00:00+00:00');
+        return new TicketView($id, 'T', 'D', 'open', 'medium', 'general', $requesterId, 'Nombre', null, null, '2026-06-22T10:00:00+00:00', '2026-06-22T10:00:00+00:00');
     }
 
     private function finderWithTwoOwners(): InMemoryTicketFinder

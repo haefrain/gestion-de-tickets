@@ -19,6 +19,17 @@ final class InMemoryTicketFinder implements TicketFinder
         $this->tickets[] = $view;
     }
 
+    public function byId(string $id): ?TicketView
+    {
+        foreach ($this->tickets as $view) {
+            if ($view->id === $id) {
+                return $view;
+            }
+        }
+
+        return null;
+    }
+
     public function search(TicketCriteria $criteria): TicketPage
     {
         $matched = array_values(array_filter($this->tickets, static function (TicketView $view) use ($criteria): bool {

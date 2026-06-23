@@ -12,15 +12,27 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
 
 /**
- * Adaptador de lectura del puerto TicketFinder. Paginación por cursor estable:
- * orden (created_at DESC, id DESC); el cursor codifica el último (created_at, id).
+ * Adaptador de lectura del puerto TicketFinder. Resuelve los nombres con LEFT JOIN a users.
+ * Paginación por cursor estable: orden (created_at DESC, id DESC).
  */
 final readonly class DoctrineTicketFinder implements TicketFinder
 {
     private const int MAX_LIMIT = 100;
+    private const string SELECT = 'SELECT t.id, t.requester_id, t.title, t.description, t.status, t.priority, t.category, '
+        .'t.assignee_id, t.created_at, t.updated_at, r.name AS requester_name, a.name AS assignee_name '
+        .'FROM tickets t '
+        .'LEFT JOIN users r ON r.id = t.requester_id '
+        .'LEFT JOIN users a ON a.id = t.assignee_id';
 
     public function __construct(private Connection $connection)
     {
+    }
+
+    public function byId(string $id): ?TicketView
+    {
+        $row = $this->connection->fetchAssociative(self::SELECT.' WHERE t.id = :id', ['id' => $id]);
+
+        return false === $row ? null : $this->toView($row);
     }
 
     public function search(TicketCriteria $criteria): TicketPage
@@ -32,30 +44,30 @@ final readonly class DoctrineTicketFinder implements TicketFinder
         $types = ['limit' => ParameterType::INTEGER];
 
         if (null !== $criteria->requesterId) {
-            $where[] = 'requester_id = :rid';
+            $where[] = 't.requester_id = :rid';
             $params['rid'] = $criteria->requesterId;
         }
         if (null !== $criteria->status) {
-            $where[] = 'status = :st';
+            $where[] = 't.status = :st';
             $params['st'] = $criteria->status;
         }
         if (null !== $criteria->priority) {
-            $where[] = 'priority = :pr';
+            $where[] = 't.priority = :pr';
             $params['pr'] = $criteria->priority;
         }
 
         $cursor = $this->decodeCursor($criteria->cursor);
         if (null !== $cursor) {
-            $where[] = '(created_at < :cca OR (created_at = :cca AND id < :cid))';
+            $where[] = '(t.created_at < :cca OR (t.created_at = :cca AND t.id < :cid))';
             $params['cca'] = $cursor['created_at'];
             $params['cid'] = $cursor['id'];
         }
 
-        $sql = 'SELECT id, requester_id, title, description, status, priority, category, assignee_id, created_at, updated_at FROM tickets';
+        $sql = self::SELECT;
         if ([] !== $where) {
             $sql .= ' WHERE '.implode(' AND ', $where);
         }
-        $sql .= ' ORDER BY created_at DESC, id DESC LIMIT :limit';
+        $sql .= ' ORDER BY t.created_at DESC, t.id DESC LIMIT :limit';
         $params['limit'] = $limit + 1;
 
         /** @var list<array<string, mixed>> $rows */
@@ -79,6 +91,9 @@ final readonly class DoctrineTicketFinder implements TicketFinder
      */
     private function toView(array $row): TicketView
     {
+        $requesterId = $this->str($row, 'requester_id');
+        $assigneeId = $this->nullableStr($row, 'assignee_id');
+
         return new TicketView(
             $this->str($row, 'id'),
             $this->str($row, 'title'),
@@ -86,8 +101,10 @@ final readonly class DoctrineTicketFinder implements TicketFinder
             $this->str($row, 'status'),
             $this->str($row, 'priority'),
             $this->str($row, 'category'),
-            $this->str($row, 'requester_id'),
-            $this->nullableStr($row, 'assignee_id'),
+            $requesterId,
+            $this->nullableStr($row, 'requester_name') ?? $requesterId,
+            $assigneeId,
+            null === $assigneeId ? null : ($this->nullableStr($row, 'assignee_name') ?? $assigneeId),
             new \DateTimeImmutable($this->str($row, 'created_at'))->format(\DateTimeInterface::ATOM),
             new \DateTimeImmutable($this->str($row, 'updated_at'))->format(\DateTimeInterface::ATOM),
         );
@@ -137,13 +154,7 @@ final readonly class DoctrineTicketFinder implements TicketFinder
     private function nullableStr(array $row, string $column): ?string
     {
         $value = $row[$column] ?? null;
-        if (null === $value) {
-            return null;
-        }
-        if (!\is_string($value)) {
-            throw new \RuntimeException(\sprintf('La columna "%s" no es una cadena.', $column));
-        }
 
-        return $value;
+        return \is_string($value) ? $value : null;
     }
 }

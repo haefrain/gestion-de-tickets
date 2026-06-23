@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Ticketing\Application\Query;
 
-use App\Ticketing\Domain\Ticket;
-
 /**
  * Modelo de lectura del ticket (CQRS): proyección serializable para las respuestas HTTP.
+ * Incluye los nombres de solicitante/asignado resueltos por el read model (JOIN a users).
  */
 final readonly class TicketView
 {
@@ -19,7 +18,9 @@ final readonly class TicketView
         public string $priority,
         public string $category,
         public string $requesterId,
+        public string $requesterName,
         public ?string $assigneeId,
+        public ?string $assigneeName,
         public string $createdAt,
         public string $updatedAt,
     ) {
@@ -31,7 +32,7 @@ final readonly class TicketView
     public static function fromArray(array $data): self
     {
         $str = static fn (string $key): string => \is_string($data[$key] ?? null) ? $data[$key] : '';
-        $assignee = $data['assignee_id'] ?? null;
+        $nullable = static fn (string $key): ?string => \is_string($data[$key] ?? null) ? $data[$key] : null;
 
         return new self(
             $str('id'),
@@ -41,25 +42,11 @@ final readonly class TicketView
             $str('priority'),
             $str('category'),
             $str('requester_id'),
-            \is_string($assignee) ? $assignee : null,
+            $str('requester_name'),
+            $nullable('assignee_id'),
+            $nullable('assignee_name'),
             $str('created_at'),
             $str('updated_at'),
-        );
-    }
-
-    public static function fromTicket(Ticket $ticket): self
-    {
-        return new self(
-            $ticket->id()->value(),
-            $ticket->title(),
-            $ticket->description(),
-            $ticket->status()->value(),
-            $ticket->priority()->value(),
-            $ticket->category()->value(),
-            $ticket->requesterId(),
-            $ticket->assigneeId(),
-            $ticket->createdAt()->format(\DateTimeInterface::ATOM),
-            $ticket->updatedAt()->format(\DateTimeInterface::ATOM),
         );
     }
 
@@ -76,7 +63,9 @@ final readonly class TicketView
             'priority' => $this->priority,
             'category' => $this->category,
             'requester_id' => $this->requesterId,
+            'requester_name' => $this->requesterName,
             'assignee_id' => $this->assigneeId,
+            'assignee_name' => $this->assigneeName,
             'created_at' => $this->createdAt,
             'updated_at' => $this->updatedAt,
         ];
