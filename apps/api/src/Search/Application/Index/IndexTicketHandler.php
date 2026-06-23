@@ -10,6 +10,7 @@ use App\Search\Domain\TicketDocument;
 use App\Shared\Application\Bus\EventHandler;
 use App\Ticketing\Domain\Event\TicketAssigned;
 use App\Ticketing\Domain\Event\TicketCreated;
+use App\Ticketing\Domain\Event\TicketEdited;
 use App\Ticketing\Domain\Event\TicketStatusChanged;
 
 /**
@@ -28,7 +29,7 @@ final readonly class IndexTicketHandler implements EventHandler
     ) {
     }
 
-    public function __invoke(TicketCreated|TicketStatusChanged|TicketAssigned $event): void
+    public function __invoke(TicketCreated|TicketStatusChanged|TicketAssigned|TicketEdited $event): void
     {
         $document = $this->tickets->find($event->ticketId->value());
         if (!$document instanceof TicketDocument) {

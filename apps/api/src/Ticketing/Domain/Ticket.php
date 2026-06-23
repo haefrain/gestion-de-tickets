@@ -7,6 +7,7 @@ namespace App\Ticketing\Domain;
 use App\Shared\Domain\AggregateRoot;
 use App\Ticketing\Domain\Event\TicketAssigned;
 use App\Ticketing\Domain\Event\TicketCreated;
+use App\Ticketing\Domain\Event\TicketEdited;
 use App\Ticketing\Domain\Event\TicketStatusChanged;
 
 /**
@@ -19,8 +20,8 @@ final class Ticket extends AggregateRoot
     private function __construct(
         private readonly TicketId $id,
         private readonly string $requesterId,
-        private readonly string $title,
-        private readonly string $description,
+        private string $title,
+        private string $description,
         private TicketStatus $status,
         private Priority $priority,
         private Category $category,
@@ -92,6 +93,26 @@ final class Ticket extends AggregateRoot
         $this->priority = $priority;
         $this->category = $category;
         $this->updatedAt = $now;
+    }
+
+    /**
+     * Edita el contenido del ticket (HU-L2-E1-04). Los campos null se conservan; el título no
+     * puede quedar vacío. Registra TicketEdited para mantener la búsqueda al día.
+     */
+    public function editContent(?string $title, ?string $description, \DateTimeImmutable $now): void
+    {
+        if (null !== $title) {
+            $title = trim($title);
+            if ('' === $title) {
+                throw new \InvalidArgumentException('El título del ticket es obligatorio.');
+            }
+            $this->title = $title;
+        }
+        if (null !== $description) {
+            $this->description = trim($description);
+        }
+        $this->updatedAt = $now;
+        $this->recordThat(new TicketEdited($this->id, $now));
     }
 
     public function assignTo(string $assigneeId, \DateTimeImmutable $now): void
