@@ -1,0 +1,39 @@
+# Rutas del contexto Ticketing (L2).
+
+api_tickets_create:
+    path: /api/v1/tickets
+    controller: App\Ticketing\Infrastructure\Http\CreateTicketController
+    methods: [POST]
+
+api_tickets_list:
+    path: /api/v1/tickets
+    controller: App\Ticketing\Infrastructure\Http\ListTicketsController
+    methods: [GET]
+
+api_tickets_get:
+    path: /api/v1/tickets/{id}
+    controller: App\Ticketing\Infrastructure\Http\GetTicketController
+    methods: [GET]
+    requirements:
+        id: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+
+api_tickets_transition:
+    path: /api/v1/tickets/{id}/transitions
+    controller: App\Ticketing\Infrastructure\Http\TransitionController
+    methods: [POST]
+    requirements:
+        id: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+
+api_tickets_patch:
+    path: /api/v1/tickets/{id}
+    controller: App\Ticketing\Infrastructure\Http\PatchTicketController
+    methods: [PATCH]
+    requirements:
+        id: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+
+api_tickets_assign:
+    path: /api/v1/tickets/{id}/assignment
+    controller: App\Ticketing\Infrastructure\Http\AssignmentController
+    methods: [POST]
+    requirements:
+        id: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
