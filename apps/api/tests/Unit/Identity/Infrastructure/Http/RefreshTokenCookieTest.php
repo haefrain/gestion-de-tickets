@@ -13,7 +13,7 @@ final class RefreshTokenCookieTest extends TestCase
 {
     public function testCreaCookieHttpOnlySameSiteStrict(): void
     {
-        $cookie = (new RefreshTokenCookie(secure: false))->create('tok-123');
+        $cookie = new RefreshTokenCookie(secure: false)->create('tok-123');
 
         self::assertSame('refresh_token', $cookie->getName());
         self::assertSame('tok-123', $cookie->getValue());
