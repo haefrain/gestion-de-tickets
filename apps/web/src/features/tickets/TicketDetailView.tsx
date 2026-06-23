@@ -1,5 +1,6 @@
 // Detalle de ticket conectado a la API (useTicket) con acciones de transición por rol.
 // La matriz de transiciones refleja la máquina de estados del backend; el backend valida (409).
+import { useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
@@ -11,11 +12,13 @@ import { PageContainer } from '../../shared/ui/layout/PageContainer';
 import { DataState } from '../../shared/ui/feedback/DataState';
 import { StatusChip } from '../../shared/ui/data-display/StatusChip';
 import { PriorityChip } from '../../shared/ui/data-display/PriorityChip';
+import { CommentList } from '../../shared/ui/tickets/CommentList';
+import { FormField } from '../../shared/ui/inputs/FormField';
 import { useNotify } from '../../shared/ui/feedback/notifications-context';
 import type { TicketStatus } from '../../shared/api/types';
 import { ROUTES } from '../../app/router/routes';
 import { useAuth } from '../auth/auth-context';
-import { useTicket, useTransitionTicket } from './api';
+import { useAddComment, useComments, useTicket, useTransitionTicket } from './api';
 
 const TRANSITIONS: Record<TicketStatus, { to: TicketStatus; label: string }[]> = {
   open: [
@@ -120,9 +123,54 @@ export function TicketDetailView() {
                 </>
               ) : null}
             </Paper>
+
+            <CommentsSection ticketId={ticket.id} />
           </Stack>
         ) : null}
       </DataState>
     </PageContainer>
+  );
+}
+
+function CommentsSection({ ticketId }: { ticketId: string }) {
+  const { notify } = useNotify();
+  const { data: comments, isLoading, isError } = useComments(ticketId);
+  const addComment = useAddComment(ticketId);
+  const [body, setBody] = useState('');
+
+  function handleSubmit(event: FormEvent): void {
+    event.preventDefault();
+    if (body.trim() === '') return;
+    addComment.mutate(body, {
+      onSuccess: () => {
+        setBody('');
+        notify('Comentario añadido.', 'success');
+      },
+      onError: () => notify('No se pudo añadir el comentario.', 'error'),
+    });
+  }
+
+  return (
+    <Paper variant="outlined" sx={{ p: 3 }}>
+      <Typography variant="h6" sx={{ mb: 2 }}>
+        Comentarios
+      </Typography>
+      <DataState loading={isLoading} error={isError ? 'No se pudieron cargar los comentarios.' : null}>
+        <CommentList comments={comments ?? []} />
+      </DataState>
+      <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+        <FormField
+          name="comment"
+          label="Añadir comentario"
+          value={body}
+          onChange={setBody}
+          multiline
+          rows={2}
+        />
+        <Button type="submit" variant="contained" disabled={addComment.isPending || body.trim() === ''}>
+          Enviar
+        </Button>
+      </Box>
+    </Paper>
   );
 }

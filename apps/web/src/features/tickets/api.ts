@@ -2,7 +2,7 @@
 // a los tipos de dominio del front (camelCase). Las vistas consumen los hooks de abajo.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../shared/api/apiClient';
-import type { CursorPage, Priority, Ticket, TicketStatus } from '../../shared/api/types';
+import type { Comment, CursorPage, Priority, Ticket, TicketStatus } from '../../shared/api/types';
 
 interface RawTicket {
   id: string;
@@ -98,5 +98,46 @@ export function useTransitionTicket(id: string) {
     mutationFn: (to: TicketStatus) =>
       apiClient.post<RawTicket>(`/tickets/${id}/transitions`, { to }).then(toTicket),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ticketsKey }),
+  });
+}
+
+interface RawComment {
+  id: string;
+  author_id: string;
+  author_name: string;
+  body: string;
+  created_at: string;
+}
+
+function toComment(raw: RawComment, ticketId: string): Comment {
+  return {
+    id: raw.id,
+    ticketId,
+    authorId: raw.author_id,
+    authorName: raw.author_name,
+    body: raw.body,
+    createdAt: raw.created_at,
+  };
+}
+
+const commentsKey = (ticketId: string) => [...ticketsKey, 'comments', ticketId] as const;
+
+export function useComments(ticketId: string) {
+  return useQuery({
+    queryKey: commentsKey(ticketId),
+    queryFn: async () => {
+      const raw = await apiClient.get<{ data: RawComment[] }>(`/tickets/${ticketId}/comments`);
+      return raw.data.map((comment) => toComment(comment, ticketId));
+    },
+    enabled: ticketId !== '',
+  });
+}
+
+export function useAddComment(ticketId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: string) =>
+      apiClient.post<{ data: RawComment[] }>(`/tickets/${ticketId}/comments`, { body }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: commentsKey(ticketId) }),
   });
 }
