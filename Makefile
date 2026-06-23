@@ -31,6 +31,9 @@ api-install: ## Instala las dependencias Composer del backend (contra el volumen
 jwt-keys: ## Genera el par de claves JWT RS256 del backend (config/jwt, no versionado)
 	$(COMPOSE) run --rm --no-deps api php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction
 
+worker: ## Consume eventos async (indexado en ES) en primer plano; útil para depurar (-vv)
+	$(COMPOSE) exec api php bin/console messenger:consume async_events -vv
+
 # ── Backend ──
 test-api: ## Backend: smoke determinista (Unit + Functional), sin servicios externos
 	$(COMPOSE) run --rm --no-deps api vendor/bin/phpunit --testsuite Unit,Functional
@@ -76,4 +79,4 @@ lint-fix: lint-fix-api lint-fix-web ## Aplica autofix de backend y frontend
 seed: ## Carga datos de demostración (placeholder hasta F6)
 	@echo "TODO: seed de datos demo (F6)"
 
-.PHONY: help up down down-v ps logs sh api-install jwt-keys web-install test-api test-api-cov test-integration lint-api lint-fix-api test-web lint-web lint-fix-web storybook build-web test lint lint-fix seed
+.PHONY: help up down down-v ps logs sh api-install jwt-keys worker web-install test-api test-api-cov test-integration lint-api lint-fix-api test-web lint-web lint-fix-web storybook build-web test lint lint-fix seed

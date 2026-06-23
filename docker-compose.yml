@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.api
-    environment:
+    environment: &api_env
       # APP_ENV no se fija aquí a propósito: como var real ganaría sobre el force=test de PHPUnit
       # y rompería los tests. El runtime usa dev por defecto (Symfony bootEnv); los tests, test.
       # Symfony da precedencia a estas env vars reales sobre las de .env (hostnames de la red Docker).
@@ -58,6 +58,29 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+    restart: unless-stopped
+
+  # ── Worker asíncrono (Symfony Messenger → RabbitMQ) ──
+  # Consume los eventos de dominio de la cola "async_events" e indexa los tickets en
+  # Elasticsearch (HU-L4-E1, HU-L3-E1-01). --time-limit recicla el proceso (anti memory-leak);
+  # --failure-limit lo detiene si algo va sistemáticamente mal. Reintentos/DLQ en messenger.yaml.
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    environment: *api_env
+    command: ["php", "bin/console", "messenger:consume", "async_events", "--time-limit=3600", "--memory-limit=128M", "-v"]
+    volumes:
+      - ./apps/api:/var/www/api
+    depends_on:
+      api:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
   # ── Frontend (Node 24 / Vite) ──
