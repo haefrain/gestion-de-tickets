@@ -20,4 +20,9 @@ interface SearchIndex
     public function index(TicketDocument $document): void;
 
     public function search(SearchCriteria $criteria): SearchResults;
+
+    /**
+     * Vacía el índice (lo recrea desde cero). Útil para reindexar a un estado conocido (seeds).
+     */
+    public function reset(): void;
 }

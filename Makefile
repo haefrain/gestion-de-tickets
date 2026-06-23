@@ -76,7 +76,7 @@ lint: lint-api lint-web ## Ejecuta el análisis estático de backend y frontend
 
 lint-fix: lint-fix-api lint-fix-web ## Aplica autofix de backend y frontend
 
-seed: ## Carga datos de demostración (placeholder hasta F6)
-	@echo "TODO: seed de datos demo (F6)"
+seed: ## Carga datos de demo (usuarios por rol + tickets) y reindexa en ES (requiere stack arriba)
+	$(COMPOSE) exec -T api php bin/console app:seed
 
 .PHONY: help up down down-v ps logs sh api-install jwt-keys worker web-install test-api test-api-cov test-integration lint-api lint-fix-api test-web lint-web lint-fix-web storybook build-web test lint lint-fix seed

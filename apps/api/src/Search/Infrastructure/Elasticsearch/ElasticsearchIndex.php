@@ -100,6 +100,13 @@ final class ElasticsearchIndex implements SearchIndex
         return $this->toResults($response, $limit, $offset);
     }
 
+    public function reset(): void
+    {
+        // 200 si existía, 404 si no: en ambos casos el índice queda limpio y se recrea al indexar.
+        $this->httpClient->request('DELETE', $this->url('/'.self::INDEX))->getStatusCode();
+        $this->ensured = false;
+    }
+
     private function ensureIndex(): void
     {
         if ($this->ensured) {
