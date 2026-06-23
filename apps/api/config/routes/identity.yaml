@@ -29,3 +29,15 @@ api_me_update:
     path: /api/v1/me
     controller: App\Identity\Infrastructure\Http\UpdateProfileController
     methods: [PATCH]
+
+api_users_list:
+    path: /api/v1/users
+    controller: App\Identity\Infrastructure\Http\ListUsersController
+    methods: [GET]
+
+api_users_update:
+    path: /api/v1/users/{id}
+    controller: App\Identity\Infrastructure\Http\UpdateUserController
+    methods: [PATCH]
+    requirements:
+        id: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'

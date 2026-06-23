@@ -33,6 +33,10 @@ final readonly class LoginHandler implements QueryHandler
         if (!$user instanceof \App\Identity\Domain\User || !$this->hasher->verify($query->password, $user->password())) {
             throw InvalidCredentials::create();
         }
+        // Cuenta desactivada por un Admin (HU-L1-E2-03): no puede autenticarse. Respuesta uniforme.
+        if (!$user->isActive()) {
+            throw InvalidCredentials::create();
+        }
 
         $access = $this->accessTokens->issueFor($user);
         $refresh = $this->refreshTokens->issueFor($user->id());

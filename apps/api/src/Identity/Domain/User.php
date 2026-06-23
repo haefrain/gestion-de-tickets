@@ -15,13 +15,13 @@ final class User extends AggregateRoot
     /**
      * @param list<Role> $roles
      */
-    private function __construct(private readonly UserId $id, private readonly Email $email, private HashedPassword $password, private ?string $name, private readonly array $roles)
+    private function __construct(private readonly UserId $id, private readonly Email $email, private HashedPassword $password, private ?string $name, private array $roles, private bool $active)
     {
     }
 
     public static function register(UserId $id, Email $email, HashedPassword $password, ?string $name): self
     {
-        $user = new self($id, $email, $password, $name, [Role::client()]);
+        $user = new self($id, $email, $password, $name, [Role::client()], true);
         $user->recordThat(UserRegistered::now($id, $email));
 
         return $user;
@@ -32,9 +32,9 @@ final class User extends AggregateRoot
      *
      * @param list<Role> $roles
      */
-    public static function reconstitute(UserId $id, Email $email, HashedPassword $password, ?string $name, array $roles): self
+    public static function reconstitute(UserId $id, Email $email, HashedPassword $password, ?string $name, array $roles, bool $active = true): self
     {
-        return new self($id, $email, $password, $name, $roles);
+        return new self($id, $email, $password, $name, $roles, $active);
     }
 
     /**
@@ -49,6 +49,31 @@ final class User extends AggregateRoot
     public function changePassword(HashedPassword $password): void
     {
         $this->password = $password;
+    }
+
+    /**
+     * Gestión por Admin (HU-L1-E2-03): cambia los roles del usuario.
+     *
+     * @param list<Role> $roles
+     */
+    public function changeRoles(array $roles): void
+    {
+        $this->roles = $roles;
+    }
+
+    public function deactivate(): void
+    {
+        $this->active = false;
+    }
+
+    public function activate(): void
+    {
+        $this->active = true;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->active;
     }
 
     public function id(): UserId

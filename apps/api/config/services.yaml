@@ -49,6 +49,12 @@ services:
     App\Identity\Infrastructure\Http\UpdateProfileController:
         tags: ['controller.service_arguments']
 
+    App\Identity\Infrastructure\Http\ListUsersController:
+        tags: ['controller.service_arguments']
+
+    App\Identity\Infrastructure\Http\UpdateUserController:
+        tags: ['controller.service_arguments']
+
     App\Ticketing\Infrastructure\Http\CreateTicketController:
         tags: ['controller.service_arguments']
 
@@ -109,6 +115,7 @@ services:
 
     # ── Identity: puertos -> adaptadores ──
     App\Identity\Application\Port\UserRepository: '@App\Identity\Infrastructure\Persistence\Doctrine\DoctrineUserRepository'
+    App\Identity\Application\Port\UserFinder: '@App\Identity\Infrastructure\Persistence\Doctrine\DoctrineUserFinder'
     App\Identity\Application\Port\PasswordHasher: '@App\Identity\Infrastructure\Security\SymfonyPasswordHasher'
     App\Identity\Application\Port\AccessTokenIssuer: '@App\Identity\Infrastructure\Security\LexikAccessTokenIssuer'
     App\Identity\Application\Port\RefreshTokenStore: '@App\Identity\Infrastructure\Security\RedisRefreshTokenStore'

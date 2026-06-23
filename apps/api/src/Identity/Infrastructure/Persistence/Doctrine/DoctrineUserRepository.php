@@ -24,18 +24,19 @@ final readonly class DoctrineUserRepository implements UserRepository
 
     public function save(User $user): void
     {
-        // Upsert por id: sirve para el registro (insert) y para editar perfil/roles (update).
+        // Upsert por id: sirve para el registro (insert) y para editar perfil/roles/estado (update).
         $this->connection->executeStatement(
-            'INSERT INTO users (id, email, password, name, roles) '
-            .'VALUES (:id, :email, :password, :name, CAST(:roles AS JSONB)) '
+            'INSERT INTO users (id, email, password, name, roles, active) '
+            .'VALUES (:id, :email, :password, :name, CAST(:roles AS JSONB), :active) '
             .'ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, password = EXCLUDED.password, '
-            .'name = EXCLUDED.name, roles = EXCLUDED.roles',
+            .'name = EXCLUDED.name, roles = EXCLUDED.roles, active = EXCLUDED.active',
             [
                 'id' => $user->id()->value(),
                 'email' => $user->email()->value(),
                 'password' => $user->password()->value(),
                 'name' => $user->name(),
                 'roles' => json_encode($user->roles(), \JSON_THROW_ON_ERROR),
+                'active' => $user->isActive() ? 'true' : 'false',
             ],
         );
     }
@@ -43,7 +44,7 @@ final readonly class DoctrineUserRepository implements UserRepository
     public function ofEmail(Email $email): ?User
     {
         $row = $this->connection->fetchAssociative(
-            'SELECT id, email, password, name, roles FROM users WHERE email = :email',
+            'SELECT id, email, password, name, roles, active FROM users WHERE email = :email',
             ['email' => $email->value()],
         );
 
@@ -57,7 +58,7 @@ final readonly class DoctrineUserRepository implements UserRepository
     public function ofById(UserId $id): ?User
     {
         $row = $this->connection->fetchAssociative(
-            'SELECT id, email, password, name, roles FROM users WHERE id = :id',
+            'SELECT id, email, password, name, roles, active FROM users WHERE id = :id',
             ['id' => $id->value()],
         );
 
@@ -79,7 +80,18 @@ final readonly class DoctrineUserRepository implements UserRepository
             new HashedPassword($this->str($row, 'password')),
             $this->nullableStr($row, 'name'),
             $this->roles($this->str($row, 'roles')),
+            $this->bool($row, 'active'),
         );
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function bool(array $row, string $column): bool
+    {
+        $value = $row[$column] ?? null;
+
+        return true === $value || 't' === $value || '1' === $value || 1 === $value;
     }
 
     /**
