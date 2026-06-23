@@ -23,3 +23,10 @@ api_tickets_transition:
     methods: [POST]
     requirements:
         id: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+
+api_tickets_patch:
+    path: /api/v1/tickets/{id}
+    controller: App\Ticketing\Infrastructure\Http\PatchTicketController
+    methods: [PATCH]
+    requirements:
+        id: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
