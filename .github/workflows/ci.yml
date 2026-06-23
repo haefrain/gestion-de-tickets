@@ -58,6 +58,7 @@ jobs:
           JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
           JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
           JWT_PASSPHRASE=ci-not-a-real-secret
+          MAILER_DSN=null://null
           EOF
 
       - name: Cache de Composer
@@ -99,6 +100,10 @@ jobs:
   integration:
     name: Backend · Integración
     runs-on: ubuntu-latest
+    # ELASTICSEARCH_URL también en el entorno real: el test de búsqueda lo lee con getenv(),
+    # que no ve las variables cargadas únicamente por el dotenv de Symfony.
+    env:
+      ELASTICSEARCH_URL: http://127.0.0.1:9200
     defaults:
       run:
         working-directory: apps/api
@@ -164,6 +169,7 @@ jobs:
           JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
           JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
           JWT_PASSPHRASE=ci-not-a-real-secret
+          MAILER_DSN=null://null
           EOF
 
       - name: Cache de Composer
