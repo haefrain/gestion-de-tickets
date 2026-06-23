@@ -1,0 +1,21 @@
+# Captura de errores del backend en GlitchTip (compatible con el SDK de Sentry).
+# Sin SENTRY_DSN definido el SDK no se inicializa: no-op en CI y en tests.
+# El DSN real (del proyecto creado en http://localhost:8000) va en .env.local, no versionado.
+sentry:
+    dsn: '%env(default::SENTRY_DSN)%'
+    # Captura las excepciones que llegan a kernel.exception; no reemplaza el handler global de PHP.
+    register_error_listener: true
+    register_error_handler: false
+    options:
+        environment: '%kernel.environment%'
+        # Solo errores reales (5xx). Los 4xx esperados los traduce ProblemJsonSubscriber a RFC 7807,
+        # así que se ignoran aquí para no inundar GlitchTip con ruido de negocio.
+        ignore_exceptions:
+            - App\Shared\Domain\UnauthorizedException
+            - App\Shared\Domain\ForbiddenException
+            - App\Shared\Domain\ConflictException
+            - App\Shared\Domain\NotFoundException
+            - App\Shared\Domain\UnprocessableException
+            - Symfony\Component\Validator\Exception\ValidationFailedException
+            - Symfony\Component\HttpKernel\Exception\HttpException
+            - Symfony\Component\Security\Core\Exception\AccessDeniedException
