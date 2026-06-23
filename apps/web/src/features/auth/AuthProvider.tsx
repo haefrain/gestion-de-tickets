@@ -1,15 +1,19 @@
 // Gestiona la sesión: access token en memoria (apiClient) y datos de usuario en estado.
-// En F3 el flujo real contra el backend está cableado pero la auth real llega en F6/L1;
+// El login (HU-L1-E1-02) devuelve solo tokens; el User de la sesión se deriva del JWT
+// (ver session.ts) hasta que exista GET /api/v1/me (HU-L1-E3-01).
 // loginAsDemo permite recorrer la UI sin backend.
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { apiClient, setAccessToken } from '../../shared/api/apiClient';
 import { ROLE_LABEL } from '../../shared/theme/tokens';
 import type { Role, User } from '../../shared/api/types';
 import { AuthContext, type AuthContextValue, type RegisterInput } from './auth-context';
+import { sessionUserFromToken } from './session';
 
+/** Contrato real de POST /api/v1/login (docs/product/legends/L1-identidad.md §HU-L1-E1-02). */
 interface LoginResponse {
-  accessToken: string;
-  user: User;
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
 }
 
 function demoUser(role: Role): User {
@@ -30,16 +34,17 @@ export function AuthProvider({
 }) {
   const [user, setUser] = useState<User | null>(initialUser);
 
-  const login = useCallback(async (email: string, password: string): Promise<void> => {
+  const login = useCallback(async (email: string, password: string, name?: string): Promise<void> => {
     const result = await apiClient.post<LoginResponse>('/login', { email, password });
-    setAccessToken(result.accessToken);
-    setUser(result.user);
+    setAccessToken(result.access_token);
+    setUser(sessionUserFromToken({ accessToken: result.access_token, email, name }));
   }, []);
 
   const register = useCallback(
     async (input: RegisterInput): Promise<void> => {
       await apiClient.post('/register', input);
-      await login(input.email, input.password);
+      // Reusa el name tecleado para la sesión (el login no lo devuelve hasta /me).
+      await login(input.email, input.password, input.name);
     },
     [login],
   );
