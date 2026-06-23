@@ -12,17 +12,18 @@ use App\Identity\Domain\UserId;
  */
 final readonly class RedisRefreshTokenStore implements RefreshTokenStore
 {
-    private const int TTL_SECONDS = 604800;
     private const string PREFIX = 'refresh:';
 
-    public function __construct(private \Redis $redis)
-    {
+    public function __construct(
+        private \Redis $redis,
+        private int $ttlSeconds,
+    ) {
     }
 
     public function issueFor(UserId $userId): string
     {
         $token = bin2hex(random_bytes(32));
-        $this->redis->setex(self::PREFIX.$token, self::TTL_SECONDS, $userId->value());
+        $this->redis->setex(self::PREFIX.$token, $this->ttlSeconds, $userId->value());
 
         return $token;
     }

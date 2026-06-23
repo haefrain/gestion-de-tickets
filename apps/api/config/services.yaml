@@ -3,6 +3,8 @@
 parameters:
     # Secure de la cookie de refresh (ADR 0006): off en dev (HTTP), on en prod (HTTPS).
     app.refresh_cookie_secure: false
+    # Vida del refresh token (7 días): única fuente para la cookie y el store de Redis (ADR 0006).
+    app.refresh_token_ttl: 604800
 
 services:
     _defaults:
@@ -73,6 +75,11 @@ services:
     App\Identity\Infrastructure\Http\RefreshTokenCookie:
         arguments:
             $secure: '%app.refresh_cookie_secure%'
+            $ttlSeconds: '%app.refresh_token_ttl%'
+
+    App\Identity\Infrastructure\Security\RedisRefreshTokenStore:
+        arguments:
+            $ttlSeconds: '%app.refresh_token_ttl%'
 
     # ── Readiness: adaptadores etiquetados para el tagged_iterator del ReadinessController ──
     App\Shared\Infrastructure\Health\PostgresHealthCheck:
