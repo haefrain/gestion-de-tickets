@@ -5,4 +5,6 @@ export const ROUTES = {
   tickets: '/',
   ticketDetailPattern: '/tickets/:id',
   ticketDetail: (id: string): string => `/tickets/${id}`,
+  profile: '/profile',
+  admin: '/admin',
 } as const;

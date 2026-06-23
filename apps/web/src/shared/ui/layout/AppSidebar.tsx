@@ -9,6 +9,7 @@ import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
 import type { SvgIconComponent } from '@mui/icons-material';
 import type { User, Role } from '../../api/types';
@@ -25,7 +26,8 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Tickets', to: ROUTES.tickets, icon: ConfirmationNumberIcon },
-  { label: 'Administración', to: '/admin', icon: AdminPanelSettingsIcon, roles: ['admin'] },
+  { label: 'Mi perfil', to: ROUTES.profile, icon: PersonIcon },
+  { label: 'Administración', to: ROUTES.admin, icon: AdminPanelSettingsIcon, roles: ['admin'] },
 ];
 
 export const SIDEBAR_WIDTH = 264;
