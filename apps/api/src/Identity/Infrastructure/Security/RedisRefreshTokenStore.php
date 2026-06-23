@@ -42,4 +42,13 @@ final readonly class RedisRefreshTokenStore implements RefreshTokenStore
 
         return UserId::fromString($value);
     }
+
+    public function revoke(string $token): void
+    {
+        if ('' === $token) {
+            return;
+        }
+
+        $this->redis->del(self::PREFIX.$token);
+    }
 }

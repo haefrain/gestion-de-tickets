@@ -39,4 +39,17 @@ final readonly class RefreshTokenCookie
 
         return \is_string($value) && '' !== $value ? $value : null;
     }
+
+    /**
+     * Cookie de borrado (logout): mismo nombre/path, valor vacío y expiración en el pasado.
+     */
+    public function clear(): Cookie
+    {
+        return Cookie::create(self::NAME, '')
+            ->withHttpOnly(true)
+            ->withSecure($this->secure)
+            ->withSameSite(Cookie::SAMESITE_STRICT)
+            ->withPath(self::PATH)
+            ->withExpires(1);
+    }
 }

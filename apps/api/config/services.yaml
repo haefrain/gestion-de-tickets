@@ -40,6 +40,9 @@ services:
     App\Identity\Infrastructure\Http\RefreshTokenController:
         tags: ['controller.service_arguments']
 
+    App\Identity\Infrastructure\Http\LogoutController:
+        tags: ['controller.service_arguments']
+
     App\Ticketing\Infrastructure\Http\CreateTicketController:
         tags: ['controller.service_arguments']
 

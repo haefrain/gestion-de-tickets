@@ -14,3 +14,8 @@ api_token_refresh:
     path: /api/v1/token/refresh
     controller: App\Identity\Infrastructure\Http\RefreshTokenController
     methods: [POST]
+
+api_logout:
+    path: /api/v1/logout
+    controller: App\Identity\Infrastructure\Http\LogoutController
+    methods: [POST]
