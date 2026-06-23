@@ -30,3 +30,10 @@ api_tickets_patch:
     methods: [PATCH]
     requirements:
         id: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+
+api_tickets_assign:
+    path: /api/v1/tickets/{id}/assignment
+    controller: App\Ticketing\Infrastructure\Http\AssignmentController
+    methods: [POST]
+    requirements:
+        id: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'

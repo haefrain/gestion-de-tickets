@@ -55,6 +55,9 @@ services:
     App\Ticketing\Infrastructure\Http\PatchTicketController:
         tags: ['controller.service_arguments']
 
+    App\Ticketing\Infrastructure\Http\AssignmentController:
+        tags: ['controller.service_arguments']
+
     App\Shared\Infrastructure\Http\ReadinessController:
         arguments:
             $checks: !tagged_iterator app.health_check
@@ -86,6 +89,7 @@ services:
     # ── Ticketing: puertos -> adaptadores ──
     App\Ticketing\Application\Port\TicketRepository: '@App\Ticketing\Infrastructure\Persistence\Doctrine\DoctrineTicketRepository'
     App\Ticketing\Application\Port\TicketFinder: '@App\Ticketing\Infrastructure\Persistence\Doctrine\DoctrineTicketFinder'
+    App\Ticketing\Application\Port\AgentDirectory: '@App\Ticketing\Infrastructure\Identity\DoctrineAgentDirectory'
 
     App\Identity\Infrastructure\Security\LexikAccessTokenIssuer:
         arguments:

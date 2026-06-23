@@ -7,6 +7,7 @@ namespace App\Shared\Infrastructure\Http;
 use App\Shared\Domain\ConflictException;
 use App\Shared\Domain\NotFoundException;
 use App\Shared\Domain\UnauthorizedException;
+use App\Shared\Domain\UnprocessableException;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -38,6 +39,12 @@ final class ProblemJsonSubscriber
 
         if ($throwable instanceof NotFoundException) {
             $event->setResponse($this->problem(Response::HTTP_NOT_FOUND, 'Recurso no encontrado', 'El recurso solicitado no existe.'));
+
+            return;
+        }
+
+        if ($throwable instanceof UnprocessableException) {
+            $event->setResponse($this->problem(Response::HTTP_UNPROCESSABLE_ENTITY, 'Entrada no procesable', $throwable->getMessage()));
 
             return;
         }
