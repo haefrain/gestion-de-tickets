@@ -5,6 +5,11 @@ api_tickets_create:
     controller: App\Ticketing\Infrastructure\Http\CreateTicketController
     methods: [POST]
 
+api_tickets_list:
+    path: /api/v1/tickets
+    controller: App\Ticketing\Infrastructure\Http\ListTicketsController
+    methods: [GET]
+
 api_tickets_get:
     path: /api/v1/tickets/{id}
     controller: App\Ticketing\Infrastructure\Http\GetTicketController
