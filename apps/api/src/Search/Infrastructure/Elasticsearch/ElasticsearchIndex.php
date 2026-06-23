@@ -61,13 +61,36 @@ final class ElasticsearchIndex implements SearchIndex
         if (null !== $criteria->requesterId) {
             $filter[] = ['term' => ['requester_id' => $criteria->requesterId]];
         }
+        if (null !== $criteria->status) {
+            $filter[] = ['term' => ['status' => $criteria->status]];
+        }
+        if (null !== $criteria->priority) {
+            $filter[] = ['term' => ['priority' => $criteria->priority]];
+        }
+        if (null !== $criteria->assigneeId) {
+            $filter[] = ['term' => ['assignee_id' => $criteria->assigneeId]];
+        }
+        $range = [];
+        if (null !== $criteria->from) {
+            $range['gte'] = $criteria->from;
+        }
+        if (null !== $criteria->to) {
+            $range['lte'] = $criteria->to;
+        }
+        if ([] !== $range) {
+            $filter[] = ['range' => ['created_at' => $range]];
+        }
+
+        $sort = 'recent' === $criteria->sort
+            ? [['created_at' => 'desc'], ['id' => 'desc']]
+            : ['_score', ['created_at' => 'desc']];
 
         $body = [
             'from' => $offset,
             'size' => $limit,
             'track_total_hits' => true,
             'query' => ['bool' => ['must' => [$match], 'filter' => $filter]],
-            'sort' => ['_score', ['created_at' => 'desc']],
+            'sort' => $sort,
         ];
 
         $response = $this->httpClient

@@ -46,6 +46,24 @@ final class SearchTicketsEndpointTest extends WebTestCase
         self::assertCount(1, $resultsAgain['data']);
     }
 
+    public function testFiltraPorPrioridad(): void
+    {
+        $client = self::createClient();
+        $this->truncate();
+        $this->resetIndex();
+
+        $token = $this->registerAndLogin($client, 'filtros@tickets.local', 'Secreta123');
+        $alta = $this->createTicket($client, $token, 'Caída total del VPN', 'Urgente', 'high');
+        $baja = $this->createTicket($client, $token, 'Consulta sobre el VPN', 'Duda menor', 'low');
+        $this->indexTicket($alta);
+        $this->indexTicket($baja);
+
+        $results = $this->search($client, $token, 'VPN', '&priority=high');
+
+        self::assertCount(1, $results['data']);
+        self::assertSame($alta, $results['data'][0]['id']);
+    }
+
     private function indexTicket(string $ticketId): void
     {
         $handler = self::getContainer()->get(IndexTicketHandler::class);
@@ -57,9 +75,9 @@ final class SearchTicketsEndpointTest extends WebTestCase
     /**
      * @return array{data: list<array{id: string}>, page: array{limit: int, next_cursor: string|null, has_more: bool}}
      */
-    private function search(KernelBrowser $client, string $token, string $query): array
+    private function search(KernelBrowser $client, string $token, string $query, string $extra = ''): array
     {
-        $client->request('GET', '/api/v1/search/tickets?q='.urlencode($query), [], [], ['HTTP_AUTHORIZATION' => 'Bearer '.$token]);
+        $client->request('GET', '/api/v1/search/tickets?q='.urlencode($query).$extra, [], [], ['HTTP_AUTHORIZATION' => 'Bearer '.$token]);
         self::assertResponseIsSuccessful();
         $content = $client->getResponse()->getContent();
         \assert(\is_string($content));
@@ -70,7 +88,7 @@ final class SearchTicketsEndpointTest extends WebTestCase
         return $data;
     }
 
-    private function createTicket(KernelBrowser $client, string $token, string $title, string $description): string
+    private function createTicket(KernelBrowser $client, string $token, string $title, string $description, string $priority = 'medium'): string
     {
         $client->request(
             'POST',
@@ -78,7 +96,7 @@ final class SearchTicketsEndpointTest extends WebTestCase
             [],
             [],
             ['CONTENT_TYPE' => 'application/json', 'HTTP_AUTHORIZATION' => 'Bearer '.$token],
-            json_encode(['title' => $title, 'description' => $description], \JSON_THROW_ON_ERROR),
+            json_encode(['title' => $title, 'description' => $description, 'priority' => $priority], \JSON_THROW_ON_ERROR),
         );
         $content = $client->getResponse()->getContent();
         \assert(\is_string($content));
