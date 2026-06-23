@@ -29,6 +29,8 @@ security:
         - { path: ^/api/v1/register, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1/token/refresh, roles: PUBLIC_ACCESS }
+        # Transiciones de estado: solo Agente/Admin (HU-L2-E1-05).
+        - { path: '^/api/v1/tickets/[0-9a-f-]+/transitions$', roles: ROLE_AGENT, methods: [POST] }
         - { path: ^/api/v1, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:

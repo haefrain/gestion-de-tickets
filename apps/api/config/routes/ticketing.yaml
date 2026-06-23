@@ -16,3 +16,10 @@ api_tickets_get:
     methods: [GET]
     requirements:
         id: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+
+api_tickets_transition:
+    path: /api/v1/tickets/{id}/transitions
+    controller: App\Ticketing\Infrastructure\Http\TransitionController
+    methods: [POST]
+    requirements:
+        id: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
