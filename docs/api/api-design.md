@@ -82,8 +82,8 @@ El cursor es opaco (codifica el último ID/orden). Cuando `has_more` es `false`,
 | Método | Ruta | Descripción | Rol |
 |---|---|---|---|
 | `POST` | `/api/v1/register` | Registro de cliente | Público |
-| `POST` | `/api/v1/login` | Login → access + refresh | Público |
-| `POST` | `/api/v1/token/refresh` | Renovar access token | Público (con refresh) |
+| `POST` | `/api/v1/login` | Login → access en body + refresh en cookie HttpOnly | Público |
+| `POST` | `/api/v1/token/refresh` | Renueva el access leyendo la cookie de refresh (rota la cookie) | Público (con cookie) |
 | `POST` | `/api/v1/logout` | Revocar refresh token | Autenticado |
 | `GET` | `/api/v1/me` | Perfil actual | Autenticado |
 

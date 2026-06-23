@@ -84,7 +84,7 @@ Escenario: Credenciales inválidas
 ```
 
 **Contrato API** · `POST /api/v1/login` (público)
-Request `{ "email", "password" }` → `200 { "access_token", "refresh_token", "expires_in" }` · error `401`.
+Request `{ "email", "password" }` → `200 { "access_token", "expires_in" }` + cookie `refresh_token` (HttpOnly, SameSite=Strict, [ADR 0006](../../architecture/adr/0006-refresh-token-en-cookie-httponly.md)) · error `401`.
 
 **Diseño técnico**
 - Autenticación vía `LexikJWTAuthenticationBundle`; access token con claims `sub`, `roles`, `exp` (~15 min); refresh token opaco (~7 días).
@@ -128,7 +128,7 @@ Escenario: Refresh inválido o expirado
 ```
 
 **Contrato API** · `POST /api/v1/token/refresh`
-Request `{ "refresh_token" }` (o cookie httpOnly) → `200 { "access_token", "refresh_token" }` · error `401`.
+Request sin body; lee la cookie `refresh_token` (HttpOnly) → `200 { "access_token", "expires_in" }` + cookie `refresh_token` rotada · error `401`. Ver [ADR 0006](../../architecture/adr/0006-refresh-token-en-cookie-httponly.md).
 
 **Diseño técnico:** valida el refresh contra `RefreshTokenStore`, emite nuevo access y **rota** el refresh.
 
