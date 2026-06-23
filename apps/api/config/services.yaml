@@ -92,6 +92,14 @@ services:
     App\Identity\Application\Port\AccessTokenIssuer: '@App\Identity\Infrastructure\Security\LexikAccessTokenIssuer'
     App\Identity\Application\Port\RefreshTokenStore: '@App\Identity\Infrastructure\Security\RedisRefreshTokenStore'
 
+    # ── Search (L3): puertos -> adaptadores ──
+    # Índice de búsqueda sobre Elasticsearch; origen de (re)indexado sobre la tabla tickets.
+    App\Search\Application\Port\SearchIndex: '@App\Search\Infrastructure\Elasticsearch\ElasticsearchIndex'
+    App\Search\Infrastructure\Elasticsearch\ElasticsearchIndex:
+        arguments:
+            $baseUrl: '%env(ELASTICSEARCH_URL)%'
+    App\Search\Application\Port\TicketReadModel: '@App\Search\Infrastructure\Persistence\Doctrine\DoctrineTicketReadModel'
+
     # ── Ticketing: puertos -> adaptadores ──
     App\Ticketing\Application\Port\TicketRepository: '@App\Ticketing\Infrastructure\Persistence\Doctrine\DoctrineTicketRepository'
     App\Ticketing\Application\Port\TicketFinder: '@App\Ticketing\Infrastructure\Persistence\Doctrine\DoctrineTicketFinder'
