@@ -15,7 +15,7 @@ El firewall `main` es **stateless** (sin sesión de servidor), lo que condiciona
 
 ## Decisión
 
-El refresh token viaja en una **cookie HttpOnly + `SameSite=Strict` + `Secure`** (este último condicional por entorno: desactivado en desarrollo sobre HTTP), con `path` acotado a los endpoints de token. La cookie **no es legible por JavaScript** y **no se devuelve en el body**.
+El refresh token viaja en una **cookie HttpOnly + `SameSite=Strict` + `Secure`** (este último condicional por entorno: desactivado en desarrollo sobre HTTP), con `path` `/api/v1` — el prefijo común que la hace llegar al endpoint de refresh y al futuro logout (`/api/v1/logout`), ambos fuera de `/api/v1/token`. La cookie **no es legible por JavaScript** y **no se devuelve en el body**.
 
 - El **login** pasa a setear esa cookie; su body deja de incluir `refresh_token` (queda `{ access_token, expires_in }`).
 - `POST /api/v1/token/refresh` lee la cookie, **rota** el refresh (lo consume/revoca y emite uno nuevo) y re-emite el access.

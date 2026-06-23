@@ -13,7 +13,7 @@ final class RefreshTokenCookieTest extends TestCase
 {
     public function testCreaCookieHttpOnlySameSiteStrict(): void
     {
-        $cookie = new RefreshTokenCookie(secure: false)->create('tok-123');
+        $cookie = new RefreshTokenCookie(secure: false, ttlSeconds: 604800)->create('tok-123');
 
         self::assertSame('refresh_token', $cookie->getName());
         self::assertSame('tok-123', $cookie->getValue());
@@ -25,7 +25,7 @@ final class RefreshTokenCookieTest extends TestCase
 
     public function testLeeLaCookieDelRequest(): void
     {
-        $factory = new RefreshTokenCookie(secure: true);
+        $factory = new RefreshTokenCookie(secure: true, ttlSeconds: 604800);
         $request = new Request();
         $request->cookies->set('refresh_token', 'leido');
 

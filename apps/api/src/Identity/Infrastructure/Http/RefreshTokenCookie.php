@@ -14,11 +14,13 @@ use Symfony\Component\HttpFoundation\Request;
 final readonly class RefreshTokenCookie
 {
     private const string NAME = 'refresh_token';
+    // Cubre el refresh (/api/v1/token/refresh) y el futuro logout (/api/v1/logout); ver ADR 0006.
     private const string PATH = '/api/v1';
-    private const int TTL_SECONDS = 604800;
 
-    public function __construct(private bool $secure)
-    {
+    public function __construct(
+        private bool $secure,
+        private int $ttlSeconds,
+    ) {
     }
 
     public function create(string $token): Cookie
@@ -28,7 +30,7 @@ final readonly class RefreshTokenCookie
             ->withSecure($this->secure)
             ->withSameSite(Cookie::SAMESITE_STRICT)
             ->withPath(self::PATH)
-            ->withExpires(time() + self::TTL_SECONDS);
+            ->withExpires(time() + $this->ttlSeconds);
     }
 
     public function read(Request $request): ?string
