@@ -1,24 +1,52 @@
-// Regresión del bug "pantalla en blanco tras registro": el login (HU-L1-E1-02) devuelve
-// { access_token, refresh_token, expires_in } SIN user; el provider debe poblar la sesión
-// derivándola del JWT + los datos del formulario (perfil real llegará de /me, HU-L1-E3-01).
+// El AuthProvider mantiene la sesión contra el backend real: login/registro pueblan el user desde
+// GET /me (HU-L1-E3-01) y, al montar, restaura la sesión con la cookie de refresh (HU-L1-E1-03).
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AuthProvider } from './AuthProvider';
 import { useAuth } from './auth-context';
+import { setAccessToken } from '../../shared/api/apiClient';
 
-/** JWT de prueba: header y firma irrelevantes (el frontend no verifica la firma). */
-function makeJwt(claims: Record<string, unknown>): string {
-  const b64url = (obj: unknown): string =>
-    btoa(JSON.stringify(obj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  return `${b64url({ typ: 'JWT', alg: 'RS256' })}.${b64url(claims)}.firma`;
+const PROFILE = {
+  id: '019ef235-6ffb-7e9c-ae73-f575fc1e1993',
+  email: 'cliente@iatsae.test',
+  name: 'Cliente Real',
+  roles: ['ROLE_CLIENT'],
+};
+
+function json(body: unknown, status: number): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
-const TOKEN = makeJwt({
-  username: '019ef235-6ffb-7e9c-ae73-f575fc1e1993',
-  roles: ['ROLE_CLIENT'],
-  iat: 1,
-  exp: 2,
-});
+/** Backend simulado; `overrides` permite cambiar la respuesta de una ruta por test. */
+function mockBackend(overrides: Record<string, () => Response> = {}): void {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((url: string | URL) => {
+      const path = String(url);
+      for (const [suffix, make] of Object.entries(overrides)) {
+        if (path.endsWith(suffix)) {
+          return Promise.resolve(make());
+        }
+      }
+      if (path.endsWith('/register')) {
+        return Promise.resolve(json({ id: PROFILE.id, email: PROFILE.email, roles: PROFILE.roles }, 201));
+      }
+      if (path.endsWith('/login')) {
+        return Promise.resolve(json({ access_token: 'tok', refresh_token: 'op', expires_in: 900 }, 200));
+      }
+      if (path.endsWith('/me')) {
+        return Promise.resolve(json(PROFILE, 200));
+      }
+      if (path.endsWith('/token/refresh')) {
+        return Promise.resolve(json({}, 401));
+      }
+      return Promise.resolve(json({}, 404));
+    }),
+  );
+}
 
 function Harness() {
   const { user, isAuthenticated, register, login } = useAuth();
@@ -26,7 +54,7 @@ function Harness() {
     <div>
       <button
         onClick={() =>
-          void register({ name: 'Cliente Demo', email: 'cliente@iatsae.test', password: 'Sup3rS3cret!' })
+          void register({ name: 'Cliente Real', email: 'cliente@iatsae.test', password: 'Sup3rS3cret!' })
         }
       >
         registrar
@@ -41,64 +69,62 @@ function Harness() {
   );
 }
 
-describe('AuthProvider contra el contrato real del backend', () => {
-  beforeEach(() => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (url: string | URL) => {
-        const path = String(url);
-        if (path.endsWith('/register')) {
-          return new Response(
-            JSON.stringify({ id: TOKEN, email: 'cliente@iatsae.test', roles: ['ROLE_CLIENT'] }),
-            { status: 201, headers: { 'Content-Type': 'application/json' } },
-          );
-        }
-        if (path.endsWith('/login')) {
-          return new Response(
-            JSON.stringify({ access_token: TOKEN, refresh_token: 'opaco', expires_in: 900 }),
-            { status: 200, headers: { 'Content-Type': 'application/json' } },
-          );
-        }
-        return new Response('{}', { status: 404, headers: { 'Content-Type': 'application/json' } });
-      }),
-    );
-  });
+describe('AuthProvider', () => {
+  beforeEach(() => setAccessToken(null));
+  afterEach(() => vi.unstubAllGlobals());
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it('puebla la sesión tras un registro exitoso (no deja user en undefined)', async () => {
+  it('puebla la sesión desde /me tras un login', async () => {
+    mockBackend();
     render(
-      <AuthProvider>
-        <Harness />
-      </AuthProvider>,
-    );
-
-    fireEvent.click(screen.getByText('registrar'));
-
-    await waitFor(() => expect(screen.getByTestId('id')).not.toHaveTextContent(''));
-    expect(screen.getByTestId('auth')).toHaveTextContent('si');
-    expect(screen.getByTestId('id')).toHaveTextContent('019ef235-6ffb-7e9c-ae73-f575fc1e1993');
-    expect(screen.getByTestId('email')).toHaveTextContent('cliente@iatsae.test');
-    expect(screen.getByTestId('role')).toHaveTextContent('client');
-    // El name del formulario se conserva en el registro.
-    expect(screen.getByTestId('name')).toHaveTextContent('Cliente Demo');
-  });
-
-  it('puebla la sesión tras un login directo, derivando el nombre del email', async () => {
-    render(
-      <AuthProvider>
+      <AuthProvider restoreSession={false}>
         <Harness />
       </AuthProvider>,
     );
 
     fireEvent.click(screen.getByText('entrar'));
 
-    await waitFor(() => expect(screen.getByTestId('id')).not.toHaveTextContent(''));
+    await waitFor(() => expect(screen.getByTestId('auth')).toHaveTextContent('si'));
+    expect(screen.getByTestId('id')).toHaveTextContent(PROFILE.id);
     expect(screen.getByTestId('email')).toHaveTextContent('cliente@iatsae.test');
     expect(screen.getByTestId('role')).toHaveTextContent('client');
-    // Sin name en el login directo: se deriva de la parte local del email (hasta que exista /me).
-    expect(screen.getByTestId('name')).toHaveTextContent('Cliente');
+    expect(screen.getByTestId('name')).toHaveTextContent('Cliente Real');
+  });
+
+  it('registra y deja la sesión iniciada (registro → login → /me)', async () => {
+    mockBackend();
+    render(
+      <AuthProvider restoreSession={false}>
+        <Harness />
+      </AuthProvider>,
+    );
+
+    fireEvent.click(screen.getByText('registrar'));
+
+    await waitFor(() => expect(screen.getByTestId('auth')).toHaveTextContent('si'));
+    expect(screen.getByTestId('email')).toHaveTextContent('cliente@iatsae.test');
+  });
+
+  it('restaura la sesión al montar si la cookie de refresh es válida', async () => {
+    mockBackend({ '/token/refresh': () => json({ access_token: 'tok', expires_in: 900 }, 200) });
+    render(
+      <AuthProvider>
+        <Harness />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByTestId('auth')).toHaveTextContent('si'));
+    expect(screen.getByTestId('id')).toHaveTextContent(PROFILE.id);
+    expect(screen.getByTestId('role')).toHaveTextContent('client');
+  });
+
+  it('no inicia sesión al montar si no hay cookie de refresh válida', async () => {
+    mockBackend(); // /token/refresh → 401
+    render(
+      <AuthProvider>
+        <Harness />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByTestId('auth')).toHaveTextContent('no'));
   });
 });

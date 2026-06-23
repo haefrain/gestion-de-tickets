@@ -1,4 +1,5 @@
-// Vista de login. Formulario real contra apiClient + acceso de demostración (F3, sin backend).
+// Vista de login: formulario real contra la API. En desarrollo, accesos rápidos por rol con las
+// credenciales sembradas (make seed) para recorrer la demo sin teclear.
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import Container from '@mui/material/Container';
@@ -38,16 +39,28 @@ export function LoginView() {
       setError(
         caught instanceof ApiError
           ? caught.message
-          : 'No se pudo iniciar sesión. El login real con JWT llega en F6; usa el acceso de demostración.',
+          : 'No se pudo iniciar sesión. Revisa tu conexión e inténtalo de nuevo.',
       );
     } finally {
       setSubmitting(false);
     }
   }
 
-  function enterDemo(role: Role): void {
-    loginAsDemo(role);
-    navigate(from, { replace: true });
+  async function enterDemo(role: Role): Promise<void> {
+    setSubmitting(true);
+    setError(null);
+    try {
+      await loginAsDemo(role);
+      navigate(from, { replace: true });
+    } catch (caught) {
+      setError(
+        caught instanceof ApiError
+          ? caught.message
+          : 'No se pudo entrar en modo demo. ¿Cargaste los datos con «make seed»?',
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -98,18 +111,22 @@ export function LoginView() {
             Regístrate
           </Link>
         </Typography>
-        <Divider sx={{ my: 3 }}>o explora la demo</Divider>
-        <Stack direction="row" spacing={1} sx={{ justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Button variant="outlined" onClick={() => enterDemo('client')}>
-            Demo Cliente
-          </Button>
-          <Button variant="outlined" onClick={() => enterDemo('agent')}>
-            Demo Agente
-          </Button>
-          <Button variant="outlined" onClick={() => enterDemo('admin')}>
-            Demo Admin
-          </Button>
-        </Stack>
+        {import.meta.env.DEV ? (
+          <>
+            <Divider sx={{ my: 3 }}>o explora la demo</Divider>
+            <Stack direction="row" spacing={1} sx={{ justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Button variant="outlined" disabled={submitting} onClick={() => void enterDemo('client')}>
+                Demo Cliente
+              </Button>
+              <Button variant="outlined" disabled={submitting} onClick={() => void enterDemo('agent')}>
+                Demo Agente
+              </Button>
+              <Button variant="outlined" disabled={submitting} onClick={() => void enterDemo('admin')}>
+                Demo Admin
+              </Button>
+            </Stack>
+          </>
+        ) : null}
       </Paper>
     </Container>
   );

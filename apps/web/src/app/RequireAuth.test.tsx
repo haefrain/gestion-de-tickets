@@ -7,7 +7,9 @@ import { RequireAuth } from './RequireAuth';
 
 function renderAt(initialUser: User | null) {
   return render(
-    <AuthProvider initialUser={initialUser}>
+    // restoreSession={false}: este test verifica RequireAuth con una sesión fija, sin el intento
+    // de restauración al montar (que tocaría la red).
+    <AuthProvider initialUser={initialUser} restoreSession={false}>
       <MemoryRouter initialEntries={['/']}>
         <Routes>
           <Route
