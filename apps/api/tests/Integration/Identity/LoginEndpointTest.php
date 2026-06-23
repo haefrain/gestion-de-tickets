@@ -35,8 +35,12 @@ final class LoginEndpointTest extends WebTestCase
         /** @var array{access_token?: string, refresh_token?: string, expires_in?: int} $data */
         $data = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
         self::assertNotEmpty($data['access_token'] ?? '');
-        self::assertNotEmpty($data['refresh_token'] ?? '');
         self::assertGreaterThan(0, $data['expires_in'] ?? 0);
+        self::assertArrayNotHasKey('refresh_token', $data); // ahora va en cookie, no en el body
+        $cookie = $client->getResponse()->headers->getCookies()[0] ?? null;
+        self::assertNotNull($cookie);
+        self::assertSame('refresh_token', $cookie->getName());
+        self::assertTrue($cookie->isHttpOnly());
     }
 
     public function testCredencialesInvalidasDevuelve401(): void
