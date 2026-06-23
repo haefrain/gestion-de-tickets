@@ -15,10 +15,10 @@ import { PriorityChip } from '../../shared/ui/data-display/PriorityChip';
 import { CommentList } from '../../shared/ui/tickets/CommentList';
 import { FormField } from '../../shared/ui/inputs/FormField';
 import { useNotify } from '../../shared/ui/feedback/notifications-context';
-import type { TicketStatus } from '../../shared/api/types';
+import type { HistoryEntry, TicketStatus } from '../../shared/api/types';
 import { ROUTES } from '../../app/router/routes';
 import { useAuth } from '../auth/auth-context';
-import { useAddComment, useComments, useTicket, useTransitionTicket } from './api';
+import { useAddComment, useComments, useHistory, useTicket, useTransitionTicket } from './api';
 
 const TRANSITIONS: Record<TicketStatus, { to: TicketStatus; label: string }[]> = {
   open: [
@@ -125,6 +125,8 @@ export function TicketDetailView() {
             </Paper>
 
             <CommentsSection ticketId={ticket.id} />
+
+            {canManage ? <HistorySection ticketId={ticket.id} /> : null}
           </Stack>
         ) : null}
       </DataState>
@@ -171,6 +173,56 @@ function CommentsSection({ ticketId }: { ticketId: string }) {
           Enviar
         </Button>
       </Box>
+    </Paper>
+  );
+}
+
+const HISTORY_LABEL: Record<string, string> = {
+  status_changed: 'Cambió el estado',
+  assigned: 'Asignó el ticket',
+  edited: 'Editó el contenido',
+  commented: 'Comentó',
+};
+
+function describeDetail(entry: HistoryEntry): string {
+  if (entry.type === 'status_changed') {
+    return `${String(entry.detail.from ?? '')} → ${String(entry.detail.to ?? '')}`;
+  }
+  return '';
+}
+
+function HistorySection({ ticketId }: { ticketId: string }) {
+  const { data: entries, isLoading, isError } = useHistory(ticketId, true);
+  const rows = entries ?? [];
+
+  return (
+    <Paper variant="outlined" sx={{ p: 3 }}>
+      <Typography variant="h6" sx={{ mb: 2 }}>
+        Historial
+      </Typography>
+      <DataState
+        loading={isLoading}
+        error={isError ? 'No se pudo cargar el historial.' : null}
+        empty={rows.length === 0}
+        emptyMessage="Sin cambios registrados."
+      >
+        <Stack spacing={1}>
+          {rows.map((entry) => (
+            <Box
+              key={`${entry.occurredAt}-${entry.type}-${entry.actorId}`}
+              sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'baseline' }}
+            >
+              <Typography variant="body2">{HISTORY_LABEL[entry.type] ?? entry.type}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                {describeDetail(entry)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                · {entry.actorName} · {formatDate(entry.occurredAt)}
+              </Typography>
+            </Box>
+          ))}
+        </Stack>
+      </DataState>
     </Paper>
   );
 }

@@ -2,7 +2,14 @@
 // a los tipos de dominio del front (camelCase). Las vistas consumen los hooks de abajo.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../shared/api/apiClient';
-import type { Comment, CursorPage, Priority, Ticket, TicketStatus } from '../../shared/api/types';
+import type {
+  Comment,
+  CursorPage,
+  HistoryEntry,
+  Priority,
+  Ticket,
+  TicketStatus,
+} from '../../shared/api/types';
 
 interface RawTicket {
   id: string;
@@ -139,5 +146,32 @@ export function useAddComment(ticketId: string) {
     mutationFn: (body: string) =>
       apiClient.post<{ data: RawComment[] }>(`/tickets/${ticketId}/comments`, { body }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: commentsKey(ticketId) }),
+  });
+}
+
+interface RawHistory {
+  type: string;
+  actor_id: string;
+  actor_name: string;
+  detail: Record<string, unknown>;
+  occurred_at: string;
+}
+
+export function useHistory(ticketId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [...ticketsKey, 'history', ticketId],
+    queryFn: async () => {
+      const raw = await apiClient.get<{ data: RawHistory[] }>(`/tickets/${ticketId}/history`);
+      return raw.data.map(
+        (entry): HistoryEntry => ({
+          type: entry.type,
+          actorId: entry.actor_id,
+          actorName: entry.actor_name,
+          detail: entry.detail,
+          occurredAt: entry.occurred_at,
+        }),
+      );
+    },
+    enabled: enabled && ticketId !== '',
   });
 }

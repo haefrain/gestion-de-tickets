@@ -47,6 +47,14 @@ export interface Ticket {
   updatedAt: IsoDateTime;
 }
 
+export interface HistoryEntry {
+  type: string;
+  actorId: Id;
+  actorName: string;
+  detail: Record<string, unknown>;
+  occurredAt: IsoDateTime;
+}
+
 /** Página por cursor (docs/api/api-design.md §5). */
 export interface CursorPage<T> {
   data: T[];
