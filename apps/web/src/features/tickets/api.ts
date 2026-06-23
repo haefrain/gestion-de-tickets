@@ -76,10 +76,76 @@ async function fetchTickets(filters: TicketFilters): Promise<CursorPage<Ticket>>
   };
 }
 
-export function useTickets(filters: TicketFilters) {
+export function useTickets(filters: TicketFilters, enabled = true) {
   return useQuery({
     queryKey: [...ticketsKey, 'list', filters],
     queryFn: () => fetchTickets(filters),
+    enabled,
+  });
+}
+
+interface RawSearchTicket {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  category: string;
+  requester_id: string;
+  assignee_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface RawSearchPage {
+  data: RawSearchTicket[];
+  page: { limit: number; next_cursor: string | null; has_more: boolean };
+}
+
+// El índice de búsqueda guarda ids, no nombres (ADR 0007): en los resultados de búsqueda
+// los nombres quedan vacíos. La relevancia y los filtros son el valor de esta vista.
+function toSearchTicket(raw: RawSearchTicket): Ticket {
+  return {
+    id: raw.id,
+    title: raw.title,
+    description: raw.description,
+    status: raw.status as TicketStatus,
+    priority: raw.priority as Priority,
+    category: raw.category,
+    requesterId: raw.requester_id,
+    requesterName: '',
+    assigneeId: raw.assignee_id,
+    assigneeName: null,
+    createdAt: raw.created_at,
+    updatedAt: raw.updated_at,
+  };
+}
+
+export interface SearchFilters {
+  q: string;
+  cursor?: string;
+  status?: TicketStatus | '';
+  priority?: Priority | '';
+}
+
+async function fetchSearch(filters: SearchFilters): Promise<CursorPage<Ticket>> {
+  const qs = new URLSearchParams({ limit: '20', q: filters.q });
+  if (filters.cursor) qs.set('cursor', filters.cursor);
+  if (filters.status) qs.set('status', filters.status);
+  if (filters.priority) qs.set('priority', filters.priority);
+
+  const raw = await apiClient.get<RawSearchPage>(`/search/tickets?${qs.toString()}`);
+  return {
+    data: raw.data.map(toSearchTicket),
+    page: { limit: raw.page.limit, nextCursor: raw.page.next_cursor, hasMore: raw.page.has_more },
+  };
+}
+
+export function useSearchTickets(filters: SearchFilters, enabled: boolean) {
+  return useQuery({
+    queryKey: [...ticketsKey, 'search', filters],
+    queryFn: () => fetchSearch(filters),
+    enabled,
   });
 }
 
