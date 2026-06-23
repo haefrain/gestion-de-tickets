@@ -29,7 +29,7 @@ Emisión vía `LexikJWTAuthenticationBundle` con firma **RS256** (par de claves 
 
 - **Access token:** en memoria de la SPA (no `localStorage`) para reducir exposición a XSS.
 - **Refresh token:** cookie `HttpOnly` + `Secure` + `SameSite=Strict`.
-- **Trade-off:** la cookie httpOnly mitiga el robo por XSS; se acompaña de protección CSRF en el endpoint de refresh.
+- **Trade-off:** la cookie httpOnly mitiga el robo por XSS; `SameSite=Strict` mitiga el CSRF del endpoint de refresh (token CSRF explícito: 2ª iteración, ver [ADR 0006](architecture/adr/0006-refresh-token-en-cookie-httponly.md)).
 
 ## 3. Autorización (RBAC)
 
@@ -63,18 +63,18 @@ La autorización se aplica en dos niveles: **rol** (acceso al endpoint) y **prop
 |---|---|
 | Fuerza bruta en login | Rate limiting por IP/usuario (contador en Redis) |
 | XSS | Access token en memoria; cookies `HttpOnly`; escape en frontend |
-| CSRF | `SameSite=Strict` + token CSRF en el refresh |
+| CSRF | `SameSite=Strict` en la cookie de refresh (token CSRF explícito: 2ª iteración, [ADR 0006](architecture/adr/0006-refresh-token-en-cookie-httponly.md)) |
 | Inyección | Validación de entrada + consultas parametrizadas (Doctrine) |
 | Exposición de cabeceras | Cabeceras de seguridad (HSTS, X-Content-Type-Options, etc.) |
 | CORS abierto | Lista blanca con el origen del frontend |
 
 ## 6. Revocación de tokens
 
-- Los refresh tokens revocados (logout, rotación) se guardan en una **lista de revocación en Redis** con TTL igual a su expiración.
+- La **rotación** (refresh) y el **logout** borran el refresh token en Redis (`GETDEL`/`DEL`): el anterior deja de existir y no se vuelve a aceptar. Una lista de revocación explícita para detectar reuso queda como 2ª iteración.
 - El access token, al ser de vida corta, no se revoca individualmente (se confía en su expiración).
 
 ## 7. Pendiente de iterar
 
 - Confirmar tiempos exactos de expiración (15 min / 7 días) según la demo.
-- Decidir si el refresh va en cookie httpOnly o en cuerpo (según el despliegue del frontend).
+- ~~Decidir si el refresh va en cookie httpOnly o en cuerpo~~ → decidido: cookie HttpOnly + `SameSite=Strict` ([ADR 0006](architecture/adr/0006-refresh-token-en-cookie-httponly.md)).
 - Definir la política de contraseñas concreta.
