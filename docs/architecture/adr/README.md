@@ -9,5 +9,6 @@ Registro de decisiones de arquitectura. Cada ADR es inmutable: si una decisión 
 | [0003](0003-identificadores-uuid-v7.md) | Identificadores UUID v7 | Aceptada |
 | [0004](0004-dominio-desacoplado-doctrine.md) | Dominio puro desacoplado de Doctrine | Aceptada |
 | [0005](0005-cqrs-ligero.md) | CQRS ligero (comandos / consultas) | Aceptada |
+| [0006](0006-refresh-token-en-cookie-httponly.md) | Refresh token en cookie HttpOnly con SameSite=Strict (sin token CSRF) | Aceptada |
 
 **Formato:** Contexto · Decisión · Consecuencias · Alternativas consideradas.
