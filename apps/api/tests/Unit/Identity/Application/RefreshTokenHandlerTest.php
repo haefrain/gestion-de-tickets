@@ -26,7 +26,7 @@ final class RefreshTokenHandlerTest extends TestCase
     private function repoWithUser(UserId $id): InMemoryUserRepository
     {
         $repo = new InMemoryUserRepository();
-        $repo->save(User::register($id, new Email('user@tickets.local'), (new FakePasswordHasher())->hash('x'), null));
+        $repo->save(User::register($id, new Email('user@tickets.local'), new FakePasswordHasher()->hash('x'), null));
 
         return $repo;
     }
