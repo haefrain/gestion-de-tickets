@@ -5,31 +5,47 @@ declare(strict_types=1);
 namespace App\Ticketing\Application\Query;
 
 use App\Shared\Application\Bus\QueryHandler;
+use App\Shared\Application\Cache\Cache;
+use App\Ticketing\Application\CacheKeys;
 use App\Ticketing\Application\Port\TicketRepository;
 use App\Ticketing\Domain\Ticket;
 use App\Ticketing\Domain\TicketId;
 
 /**
- * Caso de uso «Ver detalle» (HU-L2-E1-02). Autorización por propiedad: un Cliente solo ve
- * sus tickets; Agente/Admin ven cualquiera. Devuelve null si no existe o no está autorizado
- * (el controller lo traduce a 404, sin revelar la existencia del recurso ajeno).
+ * Caso de uso «Ver detalle» (HU-L2-E1-02) con cache-aside (HU-L5-E1-01). Se cachea la
+ * proyección del ticket (ticket.{id}); la autorización por propiedad se evalúa sobre el
+ * resultado, sin cachear la decisión. Cliente ajeno o inexistente → null (→ 404).
  */
 final readonly class GetTicketHandler implements QueryHandler
 {
-    public function __construct(private TicketRepository $tickets)
-    {
+    public function __construct(
+        private TicketRepository $tickets,
+        private Cache $cache,
+    ) {
     }
 
     public function __invoke(GetTicketQuery $query): ?TicketView
     {
-        $ticket = $this->tickets->ofId(TicketId::fromString($query->ticketId));
-        if (!$ticket instanceof Ticket) {
-            return null;
-        }
-        if (!$query->actorIsAgent && $ticket->requesterId() !== $query->actorId) {
+        $data = $this->cache->getArray(
+            CacheKeys::ticket($query->ticketId),
+            function () use ($query): ?array {
+                $ticket = $this->tickets->ofId(TicketId::fromString($query->ticketId));
+
+                return $ticket instanceof Ticket ? TicketView::fromTicket($ticket)->toArray() : null;
+            },
+            300,
+            [CacheKeys::TICKETS_TAG],
+        );
+
+        if (null === $data) {
             return null;
         }
 
-        return TicketView::fromTicket($ticket);
+        $view = TicketView::fromArray($data);
+        if (!$query->actorIsAgent && $view->requesterId !== $query->actorId) {
+            return null;
+        }
+
+        return $view;
     }
 }

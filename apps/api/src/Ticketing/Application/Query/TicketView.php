@@ -25,6 +25,28 @@ final readonly class TicketView
     ) {
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
+    public static function fromArray(array $data): self
+    {
+        $str = static fn (string $key): string => \is_string($data[$key] ?? null) ? $data[$key] : '';
+        $assignee = $data['assignee_id'] ?? null;
+
+        return new self(
+            $str('id'),
+            $str('title'),
+            $str('description'),
+            $str('status'),
+            $str('priority'),
+            $str('category'),
+            $str('requester_id'),
+            \is_string($assignee) ? $assignee : null,
+            $str('created_at'),
+            $str('updated_at'),
+        );
+    }
+
     public static function fromTicket(Ticket $ticket): self
     {
         return new self(

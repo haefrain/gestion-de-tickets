@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Ticketing\Application;
 
 use App\Tests\Support\FrozenClock;
+use App\Tests\Support\PassthroughCache;
 use App\Tests\Support\RecordingEventBus;
 use App\Tests\Support\Ticketing\InMemoryTicketRepository;
 use App\Ticketing\Application\Command\ChangeTicketStatusCommand;
@@ -41,7 +42,7 @@ final class ChangeTicketStatusHandlerTest extends TestCase
         $id = TicketId::generate();
         $repo = $this->repoWithOpenTicket($id);
         $events = new RecordingEventBus();
-        $handler = new ChangeTicketStatusHandler($repo, $events, $this->clock());
+        $handler = new ChangeTicketStatusHandler($repo, $events, $this->clock(), new PassthroughCache());
 
         $handler(new ChangeTicketStatusCommand($id->value(), TicketStatus::IN_PROGRESS, 'agent-1'));
 
@@ -53,7 +54,7 @@ final class ChangeTicketStatusHandlerTest extends TestCase
     public function testTransicionInvalidaLanzaExcepcion(): void
     {
         $id = TicketId::generate();
-        $handler = new ChangeTicketStatusHandler($this->repoWithOpenTicket($id), new RecordingEventBus(), $this->clock());
+        $handler = new ChangeTicketStatusHandler($this->repoWithOpenTicket($id), new RecordingEventBus(), $this->clock(), new PassthroughCache());
 
         $this->expectException(InvalidTransition::class);
         $handler(new ChangeTicketStatusCommand($id->value(), TicketStatus::RESOLVED, 'agent-1'));
@@ -61,7 +62,7 @@ final class ChangeTicketStatusHandlerTest extends TestCase
 
     public function testTicketInexistenteLanzaNotFound(): void
     {
-        $handler = new ChangeTicketStatusHandler(new InMemoryTicketRepository(), new RecordingEventBus(), $this->clock());
+        $handler = new ChangeTicketStatusHandler(new InMemoryTicketRepository(), new RecordingEventBus(), $this->clock(), new PassthroughCache());
 
         $this->expectException(TicketNotFound::class);
         $handler(new ChangeTicketStatusCommand(TicketId::generate()->value(), TicketStatus::IN_PROGRESS, 'agent-1'));

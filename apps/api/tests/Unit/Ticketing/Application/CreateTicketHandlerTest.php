@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Ticketing\Application;
 
+use App\Tests\Support\PassthroughCache;
 use App\Tests\Support\RecordingEventBus;
 use App\Tests\Support\Ticketing\InMemoryTicketRepository;
 use App\Ticketing\Application\Command\CreateTicketCommand;
@@ -21,7 +22,7 @@ final class CreateTicketHandlerTest extends TestCase
     {
         $repo = new InMemoryTicketRepository();
         $events = new RecordingEventBus();
-        $handler = new CreateTicketHandler($repo, $events);
+        $handler = new CreateTicketHandler($repo, $events, new PassthroughCache());
         $id = TicketId::generate();
 
         $handler(new CreateTicketCommand(
@@ -44,7 +45,7 @@ final class CreateTicketHandlerTest extends TestCase
 
     public function testTituloVacioLanzaExcepcion(): void
     {
-        $handler = new CreateTicketHandler(new InMemoryTicketRepository(), new RecordingEventBus());
+        $handler = new CreateTicketHandler(new InMemoryTicketRepository(), new RecordingEventBus(), new PassthroughCache());
 
         $this->expectException(\InvalidArgumentException::class);
 

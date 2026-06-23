@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Ticketing\Application;
 
 use App\Tests\Support\FrozenClock;
+use App\Tests\Support\PassthroughCache;
 use App\Tests\Support\RecordingEventBus;
 use App\Tests\Support\Ticketing\FakeAgentDirectory;
 use App\Tests\Support\Ticketing\InMemoryTicketRepository;
@@ -37,7 +38,7 @@ final class AssignTicketHandlerTest extends TestCase
 
     private function handler(FakeAgentDirectory $agents, RecordingEventBus $events): AssignTicketHandler
     {
-        return new AssignTicketHandler($this->repo, $agents, $events, new FrozenClock(new \DateTimeImmutable('2026-06-22T10:00:00+00:00')));
+        return new AssignTicketHandler($this->repo, $agents, $events, new FrozenClock(new \DateTimeImmutable('2026-06-22T10:00:00+00:00')), new PassthroughCache());
     }
 
     public function testAsignaAUnAgenteYPublicaEvento(): void

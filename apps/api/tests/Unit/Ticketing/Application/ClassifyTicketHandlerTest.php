@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Ticketing\Application;
 
 use App\Tests\Support\FrozenClock;
+use App\Tests\Support\PassthroughCache;
 use App\Tests\Support\Ticketing\InMemoryTicketRepository;
 use App\Ticketing\Application\Command\ClassifyTicketCommand;
 use App\Ticketing\Application\Command\ClassifyTicketHandler;
@@ -28,7 +29,7 @@ final class ClassifyTicketHandlerTest extends TestCase
     {
         $this->repo->save(Ticket::create($id, 'cli-1', 'T', 'D', Priority::medium(), Category::general(), new \DateTimeImmutable('2026-06-22T09:00:00+00:00')));
 
-        return new ClassifyTicketHandler($this->repo, new FrozenClock(new \DateTimeImmutable('2026-06-22T10:00:00+00:00')));
+        return new ClassifyTicketHandler($this->repo, new FrozenClock(new \DateTimeImmutable('2026-06-22T10:00:00+00:00')), new PassthroughCache());
     }
 
     public function testCambiaPrioridadYCategoria(): void
@@ -59,7 +60,7 @@ final class ClassifyTicketHandlerTest extends TestCase
 
     public function testTicketInexistenteLanzaNotFound(): void
     {
-        $handler = new ClassifyTicketHandler($this->repo, new FrozenClock(new \DateTimeImmutable('2026-06-22T10:00:00+00:00')));
+        $handler = new ClassifyTicketHandler($this->repo, new FrozenClock(new \DateTimeImmutable('2026-06-22T10:00:00+00:00')), new PassthroughCache());
 
         $this->expectException(TicketNotFound::class);
         $handler(new ClassifyTicketCommand(TicketId::generate()->value(), Priority::HIGH, null, 'agent-1'));

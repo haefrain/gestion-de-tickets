@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Ticketing\Application;
 
+use App\Tests\Support\PassthroughCache;
 use App\Tests\Support\Ticketing\InMemoryTicketRepository;
 use App\Ticketing\Application\Query\GetTicketHandler;
 use App\Ticketing\Application\Query\GetTicketQuery;
@@ -35,7 +36,7 @@ final class GetTicketHandlerTest extends TestCase
     public function testDuenoVeSuTicket(): void
     {
         $id = TicketId::generate();
-        $handler = new GetTicketHandler($this->repoWithTicket($id, 'cliente-1'));
+        $handler = new GetTicketHandler($this->repoWithTicket($id, 'cliente-1'), new PassthroughCache());
 
         $view = $handler(new GetTicketQuery($id->value(), 'cliente-1', false));
 
@@ -46,7 +47,7 @@ final class GetTicketHandlerTest extends TestCase
     public function testAgenteVeCualquierTicket(): void
     {
         $id = TicketId::generate();
-        $handler = new GetTicketHandler($this->repoWithTicket($id, 'cliente-1'));
+        $handler = new GetTicketHandler($this->repoWithTicket($id, 'cliente-1'), new PassthroughCache());
 
         $view = $handler(new GetTicketQuery($id->value(), 'agente-9', true));
 
@@ -56,14 +57,14 @@ final class GetTicketHandlerTest extends TestCase
     public function testClienteAjenoNoVeElTicket(): void
     {
         $id = TicketId::generate();
-        $handler = new GetTicketHandler($this->repoWithTicket($id, 'cliente-1'));
+        $handler = new GetTicketHandler($this->repoWithTicket($id, 'cliente-1'), new PassthroughCache());
 
         self::assertNull($handler(new GetTicketQuery($id->value(), 'cliente-2', false)));
     }
 
     public function testTicketInexistenteDevuelveNull(): void
     {
-        $handler = new GetTicketHandler(new InMemoryTicketRepository());
+        $handler = new GetTicketHandler(new InMemoryTicketRepository(), new PassthroughCache());
 
         self::assertNull($handler(new GetTicketQuery(TicketId::generate()->value(), 'cliente-1', false)));
     }
