@@ -12,12 +12,15 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 
 /**
- * POST /api/v1/login (HU-L1-E1-02). Devuelve access + refresh token; 401 ante credenciales inválidas.
+ * POST /api/v1/login (HU-L1-E1-02). Devuelve el access token en el body y el refresh en
+ * cookie HttpOnly (ADR 0006). 401 ante credenciales inválidas.
  */
 final readonly class LoginController
 {
-    public function __construct(private QueryBus $queryBus)
-    {
+    public function __construct(
+        private QueryBus $queryBus,
+        private RefreshTokenCookie $cookie,
+    ) {
     }
 
     public function __invoke(#[MapRequestPayload] LoginRequest $request): JsonResponse
@@ -25,13 +28,12 @@ final readonly class LoginController
         $result = $this->queryBus->ask(new LoginQuery($request->email, $request->password));
         \assert($result instanceof LoginResult);
 
-        return new JsonResponse(
-            [
-                'access_token' => $result->accessToken,
-                'refresh_token' => $result->refreshToken,
-                'expires_in' => $result->expiresIn,
-            ],
+        $response = new JsonResponse(
+            ['access_token' => $result->accessToken, 'expires_in' => $result->expiresIn],
             Response::HTTP_OK,
         );
+        $response->headers->setCookie($this->cookie->create($result->refreshToken));
+
+        return $response;
     }
 }
