@@ -96,6 +96,103 @@ jobs:
       - name: Gate de cobertura (Domain/Application ≥ 80%)
         run: php bin/coverage-check.php 80 var/coverage/clover.xml
 
+  integration:
+    name: Backend · Integración
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: tickets
+          POSTGRES_PASSWORD: tickets
+          POSTGRES_DB: tickets
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tickets" --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+      rabbitmq:
+        image: rabbitmq:3.13-management-alpine
+        env:
+          RABBITMQ_DEFAULT_USER: tickets
+          RABBITMQ_DEFAULT_PASS: tickets
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping" --health-interval 15s --health-timeout 10s --health-retries 10
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: 'false'
+          ES_JAVA_OPTS: '-Xms512m -Xmx512m'
+        ports:
+          - 9200:9200
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, intl, zip, redis, amqp
+          tools: composer:v2
+
+      - name: Preparar entorno de CI (.env efímero, sin secretos reales)
+        run: |
+          cat > .env <<'EOF'
+          APP_ENV=test
+          APP_SECRET=ci-not-a-real-secret
+          DEFAULT_URI=http://localhost
+          DATABASE_URL="postgresql://tickets:tickets@127.0.0.1:5432/tickets?serverVersion=16&charset=utf8"
+          REDIS_URL=redis://127.0.0.1:6379
+          ELASTICSEARCH_URL=http://127.0.0.1:9200
+          MESSENGER_TRANSPORT_DSN=amqp://tickets:tickets@127.0.0.1:5672/%2f/messages
+          RABBITMQ_HOST=127.0.0.1
+          RABBITMQ_PORT=5672
+          RABBITMQ_USER=tickets
+          RABBITMQ_PASSWORD=tickets
+          RABBITMQ_VHOST=/
+          JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
+          JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
+          JWT_PASSPHRASE=ci-not-a-real-secret
+          EOF
+
+      - name: Cache de Composer
+        uses: actions/cache@v4
+        with:
+          path: apps/api/vendor
+          key: composer-${{ hashFiles('apps/api/composer.lock') }}
+          restore-keys: composer-
+
+      - name: Instalar dependencias
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Generar claves JWT de test
+        run: php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction
+
+      - name: Esperar a Elasticsearch
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:9200/_cluster/health >/dev/null; then echo "Elasticsearch listo"; exit 0; fi
+            echo "esperando Elasticsearch ($i/30)..."; sleep 5
+          done
+          echo "Elasticsearch no respondió a tiempo"; exit 1
+
+      - name: Migrar la base de datos
+        run: php bin/console doctrine:migrations:migrate --no-interaction
+
+      - name: PHPUnit (Integración)
+        run: vendor/bin/phpunit --testsuite Integration
+
   frontend:
     name: Frontend · Node 24
     runs-on: ubuntu-latest
