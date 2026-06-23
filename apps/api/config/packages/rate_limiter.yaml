@@ -1,0 +1,8 @@
+framework:
+    rate_limiter:
+        # Anti fuerza bruta en login (HU-L5-E2-01): 5 intentos por ventana de 15 min, por IP.
+        login:
+            policy: 'sliding_window'
+            limit: 5
+            interval: '15 minutes'
+            cache_pool: 'rate_limiter.cache'

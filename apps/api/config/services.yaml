@@ -35,6 +35,8 @@ services:
         tags: ['controller.service_arguments']
 
     App\Identity\Infrastructure\Http\LoginController:
+        arguments:
+            $loginLimiter: '@limiter.login'
         tags: ['controller.service_arguments']
 
     App\Identity\Infrastructure\Http\RefreshTokenController:
