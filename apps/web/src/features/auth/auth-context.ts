@@ -11,11 +11,13 @@ export interface RegisterInput {
 export interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
+  /** True mientras se intenta restaurar la sesión al cargar la app (las rutas privadas esperan). */
+  initializing: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   logout: () => void;
-  /** Acceso de demostración sin backend (F3). El login real con JWT llega en F6/L1. */
-  loginAsDemo: (role: Role) => void;
+  /** Acceso rápido por rol con las credenciales sembradas (make seed). Solo para la demo local. */
+  loginAsDemo: (role: Role) => Promise<void>;
   hasRole: (...roles: Role[]) => boolean;
 }
 
