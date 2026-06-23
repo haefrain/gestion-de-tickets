@@ -85,7 +85,7 @@ final class Ticket extends AggregateRoot
         $from = $this->status;
         $this->status = $this->status->transitionTo($to);
         $this->updatedAt = $now;
-        $this->recordThat(new TicketStatusChanged($this->id, $from->value(), $to->value(), $now));
+        $this->recordThat(new TicketStatusChanged($this->id, $from->value(), $to->value(), $actorId, $now));
     }
 
     public function classify(Priority $priority, Category $category, \DateTimeImmutable $now): void
@@ -99,7 +99,7 @@ final class Ticket extends AggregateRoot
      * Edita el contenido del ticket (HU-L2-E1-04). Los campos null se conservan; el título no
      * puede quedar vacío. Registra TicketEdited para mantener la búsqueda al día.
      */
-    public function editContent(?string $title, ?string $description, \DateTimeImmutable $now): void
+    public function editContent(?string $title, ?string $description, string $actorId, \DateTimeImmutable $now): void
     {
         if (null !== $title) {
             $title = trim($title);
@@ -112,14 +112,14 @@ final class Ticket extends AggregateRoot
             $this->description = trim($description);
         }
         $this->updatedAt = $now;
-        $this->recordThat(new TicketEdited($this->id, $now));
+        $this->recordThat(new TicketEdited($this->id, $actorId, $now));
     }
 
-    public function assignTo(string $assigneeId, \DateTimeImmutable $now): void
+    public function assignTo(string $assigneeId, string $actorId, \DateTimeImmutable $now): void
     {
         $this->assigneeId = $assigneeId;
         $this->updatedAt = $now;
-        $this->recordThat(new TicketAssigned($this->id, $assigneeId, $now));
+        $this->recordThat(new TicketAssigned($this->id, $assigneeId, $actorId, $now));
     }
 
     public function id(): TicketId

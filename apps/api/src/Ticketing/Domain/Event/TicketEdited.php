@@ -14,6 +14,7 @@ final readonly class TicketEdited implements DomainEvent
 {
     public function __construct(
         public TicketId $ticketId,
+        public string $actorId,
         private \DateTimeImmutable $occurredOn,
     ) {
     }

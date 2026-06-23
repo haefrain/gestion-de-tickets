@@ -51,8 +51,8 @@ final class IndexTicketHandlerTest extends TestCase
         $index = new FakeSearchIndex();
         $handler = new IndexTicketHandler($readModel, $index);
 
-        $handler(new TicketStatusChanged($id, 'open', 'in_progress', new \DateTimeImmutable()));
-        $handler(new TicketAssigned($id, 'agent-1', new \DateTimeImmutable()));
+        $handler(new TicketStatusChanged($id, 'open', 'in_progress', 'agent-1', new \DateTimeImmutable()));
+        $handler(new TicketAssigned($id, 'agent-1', 'agent-1', new \DateTimeImmutable()));
 
         self::assertArrayHasKey($id->value(), $index->documents);
     }

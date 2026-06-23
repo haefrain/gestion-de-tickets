@@ -71,7 +71,7 @@ final class SeedDemoCommand extends Command
 
         // Un ticket en curso y asignado, para una demo más rica.
         $enCurso->changeStatus(TicketStatus::fromString(TicketStatus::IN_PROGRESS), $agenteId, $now);
-        $enCurso->assignTo($agenteId, $now);
+        $enCurso->assignTo($agenteId, $agenteId, $now);
         $this->tickets->save($enCurso);
 
         // Reindexado completo a un estado conocido.

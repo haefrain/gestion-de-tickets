@@ -55,7 +55,7 @@ final readonly class UpdateTicketHandler implements CommandHandler
 
         $now = $this->clock->now();
         if ($editsContent) {
-            $ticket->editContent($command->title, $command->description, $now);
+            $ticket->editContent($command->title, $command->description, $command->actorId, $now);
         }
         if ($editsClassification) {
             $priority = null !== $command->priority ? Priority::fromString($command->priority) : $ticket->priority();

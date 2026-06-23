@@ -91,7 +91,7 @@ final class TicketTest extends TestCase
         $ticket = $this->newTicket();
         $ticket->pullDomainEvents();
 
-        $ticket->assignTo('agent-7', $this->now());
+        $ticket->assignTo('agent-7', 'admin-1', $this->now());
 
         self::assertSame('agent-7', $ticket->assigneeId());
         $events = $ticket->pullDomainEvents();
