@@ -67,6 +67,12 @@ services:
     App\Ticketing\Infrastructure\Http\AssignmentController:
         tags: ['controller.service_arguments']
 
+    App\Ticketing\Infrastructure\Http\AddCommentController:
+        tags: ['controller.service_arguments']
+
+    App\Ticketing\Infrastructure\Http\ListCommentsController:
+        tags: ['controller.service_arguments']
+
     App\Search\Infrastructure\Http\SearchTicketsController:
         tags: ['controller.service_arguments']
 
@@ -116,6 +122,8 @@ services:
     App\Ticketing\Application\Port\TicketRepository: '@App\Ticketing\Infrastructure\Persistence\Doctrine\DoctrineTicketRepository'
     App\Ticketing\Application\Port\TicketFinder: '@App\Ticketing\Infrastructure\Persistence\Doctrine\DoctrineTicketFinder'
     App\Ticketing\Application\Port\AgentDirectory: '@App\Ticketing\Infrastructure\Identity\DoctrineAgentDirectory'
+    App\Ticketing\Application\Port\CommentRepository: '@App\Ticketing\Infrastructure\Persistence\Doctrine\DoctrineCommentRepository'
+    App\Ticketing\Application\Port\CommentFinder: '@App\Ticketing\Infrastructure\Persistence\Doctrine\DoctrineCommentFinder'
 
     App\Identity\Infrastructure\Security\LexikAccessTokenIssuer:
         arguments:
