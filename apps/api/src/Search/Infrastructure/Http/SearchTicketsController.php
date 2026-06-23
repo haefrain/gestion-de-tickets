@@ -29,17 +29,28 @@ final readonly class SearchTicketsController
         $actorId = $this->security->getUser()?->getUserIdentifier();
         \assert(\is_string($actorId));
 
-        $cursor = $request->query->getString('cursor');
-
         $results = $this->queryBus->ask(new SearchTicketsQuery(
             $request->query->getString('q'),
             $actorId,
             $this->security->isGranted('ROLE_AGENT'),
+            $this->nullable($request, 'status'),
+            $this->nullable($request, 'priority'),
+            $this->nullable($request, 'assignee'),
+            $this->nullable($request, 'from'),
+            $this->nullable($request, 'to'),
+            'recent' === $request->query->getString('sort') ? 'recent' : 'relevance',
             $request->query->getInt('limit', 20),
-            '' !== $cursor ? $cursor : null,
+            $this->nullable($request, 'cursor'),
         ));
         \assert($results instanceof SearchResults);
 
         return new JsonResponse($results->toArray(), Response::HTTP_OK);
+    }
+
+    private function nullable(Request $request, string $key): ?string
+    {
+        $value = $request->query->getString($key);
+
+        return '' !== $value ? $value : null;
     }
 }

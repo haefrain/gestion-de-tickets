@@ -15,8 +15,8 @@ use Doctrine\DBAL\Connection;
  */
 final readonly class DoctrineTicketReadModel implements TicketReadModel
 {
-    private const string SELECT = 'SELECT id, title, description, status, priority, category, '
-        .'requester_id, assignee_id, created_at, updated_at FROM tickets WHERE id = :id';
+    private const string COLUMNS = 'SELECT id, title, description, status, priority, category, '
+        .'requester_id, assignee_id, created_at, updated_at FROM tickets';
 
     public function __construct(private Connection $connection)
     {
@@ -24,11 +24,24 @@ final readonly class DoctrineTicketReadModel implements TicketReadModel
 
     public function find(string $ticketId): ?TicketDocument
     {
-        $row = $this->connection->fetchAssociative(self::SELECT, ['id' => $ticketId]);
-        if (false === $row) {
-            return null;
-        }
+        $row = $this->connection->fetchAssociative(self::COLUMNS.' WHERE id = :id', ['id' => $ticketId]);
 
+        return false === $row ? null : $this->toDocument($row);
+    }
+
+    public function iterateAll(): iterable
+    {
+        $result = $this->connection->executeQuery(self::COLUMNS.' ORDER BY created_at ASC, id ASC');
+        while (false !== ($row = $result->fetchAssociative())) {
+            yield $this->toDocument($row);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function toDocument(array $row): TicketDocument
+    {
         return new TicketDocument(
             $this->str($row, 'id'),
             $this->str($row, 'title'),

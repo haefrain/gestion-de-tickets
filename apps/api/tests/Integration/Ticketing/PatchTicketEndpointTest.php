@@ -57,6 +57,31 @@ final class PatchTicketEndpointTest extends WebTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
+    public function testDuenoEditaTituloYDescripcion(): void
+    {
+        $client = self::createClient();
+        $this->truncate();
+        $token = $this->registerAndLogin($client, 'owner@tickets.local', 'Secreta123');
+        $id = $this->createTicket($client, $token);
+
+        $client->request(
+            'PATCH',
+            '/api/v1/tickets/'.$id,
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json', 'HTTP_AUTHORIZATION' => 'Bearer '.$token],
+            json_encode(['title' => 'Título corregido', 'description' => 'Descripción ampliada'], \JSON_THROW_ON_ERROR),
+        );
+
+        self::assertResponseIsSuccessful();
+        $content = $client->getResponse()->getContent();
+        self::assertIsString($content);
+        /** @var array{title?: string, description?: string} $data */
+        $data = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame('Título corregido', $data['title'] ?? null);
+        self::assertSame('Descripción ampliada', $data['description'] ?? null);
+    }
+
     private function createTicket(KernelBrowser $client, string $token): string
     {
         $client->request('POST', '/api/v1/tickets', [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_AUTHORIZATION' => 'Bearer '.$token], json_encode(['title' => 'Ticket', 'description' => 'd'], \JSON_THROW_ON_ERROR));

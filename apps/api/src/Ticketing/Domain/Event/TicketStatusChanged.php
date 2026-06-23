@@ -13,6 +13,7 @@ final readonly class TicketStatusChanged implements DomainEvent
         public TicketId $ticketId,
         public string $from,
         public string $to,
+        public string $actorId,
         private \DateTimeImmutable $occurredOn,
     ) {
     }

@@ -24,6 +24,12 @@ final readonly class SearchTicketsHandler implements QueryHandler
         return $this->index->search(new SearchCriteria(
             $query->query,
             $requesterId,
+            $query->status,
+            $query->priority,
+            $query->assigneeId,
+            $query->from,
+            $query->to,
+            $query->sort,
             $query->limit,
             $query->cursor,
         ));

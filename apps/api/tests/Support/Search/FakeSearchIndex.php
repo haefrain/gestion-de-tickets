@@ -26,6 +26,11 @@ final class FakeSearchIndex implements SearchIndex
         $this->documents[$document->id] = $document;
     }
 
+    public function reset(): void
+    {
+        $this->documents = [];
+    }
+
     public function search(SearchCriteria $criteria): SearchResults
     {
         $this->lastCriteria = $criteria;

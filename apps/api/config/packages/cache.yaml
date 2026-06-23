@@ -10,3 +10,15 @@ framework:
                 adapter: cache.adapter.redis
                 tags: true
                 default_lifetime: 300
+            # Almacén del rate limiter de login sobre Redis (L5-E2).
+            rate_limiter.cache:
+                adapter: cache.adapter.redis
+
+when@test:
+    framework:
+        cache:
+            # En test el limiter usa un almacén en memoria: aislado por arranque de kernel,
+            # no contamina otras pruebas (que rearrancan el kernel en cada request).
+            pools:
+                rate_limiter.cache:
+                    adapter: cache.adapter.array

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Shared\Infrastructure\Http;
 
 use App\Shared\Domain\ConflictException;
+use App\Shared\Domain\ForbiddenException;
 use App\Shared\Domain\NotFoundException;
 use App\Shared\Domain\UnauthorizedException;
 use App\Shared\Domain\UnprocessableException;
@@ -27,6 +28,12 @@ final class ProblemJsonSubscriber
 
         if ($throwable instanceof UnauthorizedException) {
             $event->setResponse($this->problem(Response::HTTP_UNAUTHORIZED, 'No autorizado', 'Credenciales inválidas o ausentes.'));
+
+            return;
+        }
+
+        if ($throwable instanceof ForbiddenException) {
+            $event->setResponse($this->problem(Response::HTTP_FORBIDDEN, 'Acceso denegado', '' !== $throwable->getMessage() ? $throwable->getMessage() : 'No tienes permiso para esta acción.'));
 
             return;
         }

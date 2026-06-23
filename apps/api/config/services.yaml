@@ -35,9 +35,26 @@ services:
         tags: ['controller.service_arguments']
 
     App\Identity\Infrastructure\Http\LoginController:
+        arguments:
+            $loginLimiter: '@limiter.login'
         tags: ['controller.service_arguments']
 
     App\Identity\Infrastructure\Http\RefreshTokenController:
+        tags: ['controller.service_arguments']
+
+    App\Identity\Infrastructure\Http\LogoutController:
+        tags: ['controller.service_arguments']
+
+    App\Identity\Infrastructure\Http\GetProfileController:
+        tags: ['controller.service_arguments']
+
+    App\Identity\Infrastructure\Http\UpdateProfileController:
+        tags: ['controller.service_arguments']
+
+    App\Identity\Infrastructure\Http\ListUsersController:
+        tags: ['controller.service_arguments']
+
+    App\Identity\Infrastructure\Http\UpdateUserController:
         tags: ['controller.service_arguments']
 
     App\Ticketing\Infrastructure\Http\CreateTicketController:
@@ -56,6 +73,15 @@ services:
         tags: ['controller.service_arguments']
 
     App\Ticketing\Infrastructure\Http\AssignmentController:
+        tags: ['controller.service_arguments']
+
+    App\Ticketing\Infrastructure\Http\AddCommentController:
+        tags: ['controller.service_arguments']
+
+    App\Ticketing\Infrastructure\Http\ListCommentsController:
+        tags: ['controller.service_arguments']
+
+    App\Ticketing\Infrastructure\Http\HistoryController:
         tags: ['controller.service_arguments']
 
     App\Search\Infrastructure\Http\SearchTicketsController:
@@ -91,9 +117,17 @@ services:
 
     # ── Identity: puertos -> adaptadores ──
     App\Identity\Application\Port\UserRepository: '@App\Identity\Infrastructure\Persistence\Doctrine\DoctrineUserRepository'
+    App\Identity\Application\Port\UserFinder: '@App\Identity\Infrastructure\Persistence\Doctrine\DoctrineUserFinder'
     App\Identity\Application\Port\PasswordHasher: '@App\Identity\Infrastructure\Security\SymfonyPasswordHasher'
     App\Identity\Application\Port\AccessTokenIssuer: '@App\Identity\Infrastructure\Security\LexikAccessTokenIssuer'
     App\Identity\Application\Port\RefreshTokenStore: '@App\Identity\Infrastructure\Security\RedisRefreshTokenStore'
+
+    # ── Notifications (L4-E2): puertos -> adaptadores ──
+    App\Notifications\Application\Port\Recipients: '@App\Notifications\Infrastructure\Persistence\Doctrine\DoctrineRecipients'
+    App\Notifications\Application\Port\Notifier: '@App\Notifications\Infrastructure\Notifier\MailerNotifier'
+    App\Notifications\Infrastructure\Notifier\MailerNotifier:
+        arguments:
+            $fromAddress: 'noreply@tickets.local'
 
     # ── Search (L3): puertos -> adaptadores ──
     # Índice de búsqueda sobre Elasticsearch; origen de (re)indexado sobre la tabla tickets.
@@ -107,6 +141,11 @@ services:
     App\Ticketing\Application\Port\TicketRepository: '@App\Ticketing\Infrastructure\Persistence\Doctrine\DoctrineTicketRepository'
     App\Ticketing\Application\Port\TicketFinder: '@App\Ticketing\Infrastructure\Persistence\Doctrine\DoctrineTicketFinder'
     App\Ticketing\Application\Port\AgentDirectory: '@App\Ticketing\Infrastructure\Identity\DoctrineAgentDirectory'
+    App\Ticketing\Application\Port\AssignmentStrategy: '@App\Ticketing\Infrastructure\Identity\LeastBusyAssignment'
+    App\Ticketing\Application\Port\CommentRepository: '@App\Ticketing\Infrastructure\Persistence\Doctrine\DoctrineCommentRepository'
+    App\Ticketing\Application\Port\CommentFinder: '@App\Ticketing\Infrastructure\Persistence\Doctrine\DoctrineCommentFinder'
+    App\Ticketing\Application\Port\TicketHistoryRepository: '@App\Ticketing\Infrastructure\Persistence\Doctrine\DoctrineTicketHistoryRepository'
+    App\Ticketing\Application\Port\TicketHistoryFinder: '@App\Ticketing\Infrastructure\Persistence\Doctrine\DoctrineTicketHistoryFinder'
 
     App\Identity\Infrastructure\Security\LexikAccessTokenIssuer:
         arguments:

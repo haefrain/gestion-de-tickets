@@ -31,9 +31,14 @@ security:
         - { path: ^/api/v1/token/refresh, roles: PUBLIC_ACCESS }
         # Transiciones de estado: solo Agente/Admin (HU-L2-E1-05).
         - { path: '^/api/v1/tickets/[0-9a-f-]+/transitions$', roles: ROLE_AGENT, methods: [POST] }
-        # Clasificación (prioridad/categoría) y asignación: solo Agente/Admin (HU-L2-E2-01, E2-02).
-        - { path: '^/api/v1/tickets/[0-9a-f-]+$', roles: ROLE_AGENT, methods: [PATCH] }
+        # Asignación: solo Agente/Admin (HU-L2-E2-02).
         - { path: '^/api/v1/tickets/[0-9a-f-]+/assignment$', roles: ROLE_AGENT, methods: [POST] }
+        # Historial de auditoría: solo Agente/Admin (HU-L2-E3-02).
+        - { path: '^/api/v1/tickets/[0-9a-f-]+/history$', roles: ROLE_AGENT, methods: [GET] }
+        # Gestión de usuarios: solo Admin (HU-L1-E2-03).
+        - { path: ^/api/v1/users, roles: ROLE_ADMIN }
+        # PATCH (HU-L2-E1-04 edición + HU-L2-E2-01 clasificación): autenticado; la autorización
+        # por campo (dueño edita contenido, agente clasifica) la resuelve UpdateTicketHandler.
         - { path: ^/api/v1, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:

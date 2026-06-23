@@ -32,4 +32,9 @@ final class FakeRefreshTokenStore implements RefreshTokenStore
 
         return UserId::fromString($userId);
     }
+
+    public function revoke(string $token): void
+    {
+        unset($this->tokens[$token]);
+    }
 }

@@ -12,6 +12,7 @@ final readonly class TicketAssigned implements DomainEvent
     public function __construct(
         public TicketId $ticketId,
         public string $assigneeId,
+        public string $actorId,
         private \DateTimeImmutable $occurredOn,
     ) {
     }

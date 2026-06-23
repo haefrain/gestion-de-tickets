@@ -41,7 +41,7 @@ final readonly class AssignTicketHandler implements CommandHandler
             throw NotAnAgent::withId($command->assigneeId);
         }
 
-        $ticket->assignTo($command->assigneeId, $this->clock->now());
+        $ticket->assignTo($command->assigneeId, $command->actorId, $this->clock->now());
 
         $this->tickets->save($ticket);
         $this->cache->delete(CacheKeys::ticket($command->ticketId));

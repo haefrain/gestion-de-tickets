@@ -20,4 +20,9 @@ interface RefreshTokenStore
      * Valida el refresh token y lo revoca (rotación). Devuelve el UserId asociado, o null si no existe.
      */
     public function consume(string $token): ?UserId;
+
+    /**
+     * Revoca el refresh token sin emitir uno nuevo (logout). Idempotente: si no existe, no hace nada.
+     */
+    public function revoke(string $token): void;
 }

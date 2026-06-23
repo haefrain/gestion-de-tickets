@@ -37,3 +37,24 @@ api_tickets_assign:
     methods: [POST]
     requirements:
         id: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+
+api_tickets_comments_add:
+    path: /api/v1/tickets/{id}/comments
+    controller: App\Ticketing\Infrastructure\Http\AddCommentController
+    methods: [POST]
+    requirements:
+        id: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+
+api_tickets_comments_list:
+    path: /api/v1/tickets/{id}/comments
+    controller: App\Ticketing\Infrastructure\Http\ListCommentsController
+    methods: [GET]
+    requirements:
+        id: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+
+api_tickets_history:
+    path: /api/v1/tickets/{id}/history
+    controller: App\Ticketing\Infrastructure\Http\HistoryController
+    methods: [GET]
+    requirements:
+        id: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
