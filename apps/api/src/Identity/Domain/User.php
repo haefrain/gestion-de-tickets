@@ -15,7 +15,7 @@ final class User extends AggregateRoot
     /**
      * @param list<Role> $roles
      */
-    private function __construct(private readonly UserId $id, private readonly Email $email, private readonly HashedPassword $password, private readonly ?string $name, private readonly array $roles)
+    private function __construct(private readonly UserId $id, private readonly Email $email, private HashedPassword $password, private ?string $name, private readonly array $roles)
     {
     }
 
@@ -35,6 +35,20 @@ final class User extends AggregateRoot
     public static function reconstitute(UserId $id, Email $email, HashedPassword $password, ?string $name, array $roles): self
     {
         return new self($id, $email, $password, $name, $roles);
+    }
+
+    /**
+     * Edita el perfil (HU-L1-E3-01). name vacío se normaliza a null.
+     */
+    public function rename(?string $name): void
+    {
+        $name = null === $name ? null : trim($name);
+        $this->name = '' === $name ? null : $name;
+    }
+
+    public function changePassword(HashedPassword $password): void
+    {
+        $this->password = $password;
     }
 
     public function id(): UserId

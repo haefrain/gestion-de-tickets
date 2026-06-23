@@ -19,3 +19,13 @@ api_logout:
     path: /api/v1/logout
     controller: App\Identity\Infrastructure\Http\LogoutController
     methods: [POST]
+
+api_me_get:
+    path: /api/v1/me
+    controller: App\Identity\Infrastructure\Http\GetProfileController
+    methods: [GET]
+
+api_me_update:
+    path: /api/v1/me
+    controller: App\Identity\Infrastructure\Http\UpdateProfileController
+    methods: [PATCH]

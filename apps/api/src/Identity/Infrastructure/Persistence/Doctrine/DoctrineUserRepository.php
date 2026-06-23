@@ -24,13 +24,20 @@ final readonly class DoctrineUserRepository implements UserRepository
 
     public function save(User $user): void
     {
-        $this->connection->insert('users', [
-            'id' => $user->id()->value(),
-            'email' => $user->email()->value(),
-            'password' => $user->password()->value(),
-            'name' => $user->name(),
-            'roles' => json_encode($user->roles(), \JSON_THROW_ON_ERROR),
-        ]);
+        // Upsert por id: sirve para el registro (insert) y para editar perfil/roles (update).
+        $this->connection->executeStatement(
+            'INSERT INTO users (id, email, password, name, roles) '
+            .'VALUES (:id, :email, :password, :name, CAST(:roles AS JSONB)) '
+            .'ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, password = EXCLUDED.password, '
+            .'name = EXCLUDED.name, roles = EXCLUDED.roles',
+            [
+                'id' => $user->id()->value(),
+                'email' => $user->email()->value(),
+                'password' => $user->password()->value(),
+                'name' => $user->name(),
+                'roles' => json_encode($user->roles(), \JSON_THROW_ON_ERROR),
+            ],
+        );
     }
 
     public function ofEmail(Email $email): ?User
