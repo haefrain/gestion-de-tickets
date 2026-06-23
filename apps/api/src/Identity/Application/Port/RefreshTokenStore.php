@@ -15,4 +15,9 @@ interface RefreshTokenStore
      * Emite y persiste un refresh token opaco para el usuario; devuelve el token.
      */
     public function issueFor(UserId $userId): string;
+
+    /**
+     * Valida el refresh token y lo revoca (rotación). Devuelve el UserId asociado, o null si no existe.
+     */
+    public function consume(string $token): ?UserId;
 }

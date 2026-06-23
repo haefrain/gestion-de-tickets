@@ -44,6 +44,28 @@ final readonly class DoctrineUserRepository implements UserRepository
             return null;
         }
 
+        return $this->hydrate($row);
+    }
+
+    public function ofById(UserId $id): ?User
+    {
+        $row = $this->connection->fetchAssociative(
+            'SELECT id, email, password, name, roles FROM users WHERE id = :id',
+            ['id' => $id->value()],
+        );
+
+        if (false === $row) {
+            return null;
+        }
+
+        return $this->hydrate($row);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function hydrate(array $row): User
+    {
         return User::reconstitute(
             UserId::fromString($this->str($row, 'id')),
             new Email($this->str($row, 'email')),

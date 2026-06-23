@@ -2,8 +2,16 @@ security:
     password_hashers:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
 
+    # HU-L1-E2-01: jerarquía de roles. Cada rol hereda los permisos del anterior.
+    role_hierarchy:
+        ROLE_AGENT: ROLE_CLIENT
+        ROLE_ADMIN: ROLE_AGENT
+
     providers:
-        users_in_memory: { memory: null }
+        # Provider stateless: reconstruye el TokenUser desde los claims del JWT (HU-L1-E2-02).
+        jwt:
+            lexik_jwt:
+                class: App\Identity\Infrastructure\Security\TokenUser
 
     firewalls:
         dev:
@@ -11,13 +19,17 @@ security:
             security: false
         main:
             stateless: true
-            provider: users_in_memory
-            # F2: sin autenticadores. El walking skeleton (/api/v1/health) es público.
-            # El autenticador JWT (lexik, RS256) se activa en F6 con el contexto Identity (L1).
+            provider: jwt
+            # HU-L1-E2-02: autenticador JWT (Lexik, RS256). Valida el Bearer y carga roles del token.
+            jwt: ~
 
-    # Solo se aplica la *primera* regla que coincide.
+    # Solo se aplica la *primera* regla que coincide. Públicas primero, luego el resto autenticado.
     access_control:
         - { path: ^/api/v1/health, roles: PUBLIC_ACCESS }
+        - { path: ^/api/v1/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api/v1/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/v1/token/refresh, roles: PUBLIC_ACCESS }
+        - { path: ^/api/v1, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:
     security:

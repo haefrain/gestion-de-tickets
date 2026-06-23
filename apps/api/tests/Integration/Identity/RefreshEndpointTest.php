@@ -9,25 +9,19 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 /**
- * Integración de POST /api/v1/login (HU-L1-E1-02): emite JWT (Lexik) + refresh (Redis).
+ * Integración de POST /api/v1/token/refresh (HU-L1-E1-03): rota el refresh (cookie) y re-emite access.
  * Requiere el stack arriba (postgres + redis + claves JWT).
  */
-final class LoginEndpointTest extends WebTestCase
+final class RefreshEndpointTest extends WebTestCase
 {
-    public function testLoginExitosoDevuelveTokens(): void
+    public function testRefreshConCookieValidaRotaYDevuelveAccess(): void
     {
         $client = self::createClient();
         $this->truncateUsers();
-        $this->register($client, 'login@tickets.local', 'Secreta123');
+        $this->register($client, 'refresh@tickets.local', 'Secreta123');
+        $this->login($client, 'refresh@tickets.local', 'Secreta123');
 
-        $client->request(
-            'POST',
-            '/api/v1/login',
-            [],
-            [],
-            ['CONTENT_TYPE' => 'application/json'],
-            json_encode(['email' => 'login@tickets.local', 'password' => 'Secreta123'], \JSON_THROW_ON_ERROR),
-        );
+        $client->request('POST', '/api/v1/token/refresh');
 
         self::assertResponseIsSuccessful();
         $content = $client->getResponse()->getContent();
@@ -35,30 +29,40 @@ final class LoginEndpointTest extends WebTestCase
         /** @var array{access_token?: string, refresh_token?: string, expires_in?: int} $data */
         $data = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
         self::assertNotEmpty($data['access_token'] ?? '');
-        self::assertGreaterThan(0, $data['expires_in'] ?? 0);
-        self::assertArrayNotHasKey('refresh_token', $data); // ahora va en cookie, no en el body
-        $cookie = $client->getResponse()->headers->getCookies()[0] ?? null;
-        self::assertNotNull($cookie);
-        self::assertSame('refresh_token', $cookie->getName());
-        self::assertTrue($cookie->isHttpOnly());
+        self::assertArrayNotHasKey('refresh_token', $data); // el refresh no viaja en el body
+        self::assertNotNull($client->getResponse()->headers->getCookies()[0] ?? null); // sí en cookie
     }
 
-    public function testCredencialesInvalidasDevuelve401(): void
+    public function testSinCookieDevuelve401(): void
     {
         $client = self::createClient();
-        $this->truncateUsers();
-        $this->register($client, 'login@tickets.local', 'Secreta123');
 
+        $client->request('POST', '/api/v1/token/refresh');
+
+        self::assertResponseStatusCodeSame(401);
+    }
+
+    public function testCookieInvalidaDevuelve401(): void
+    {
+        $client = self::createClient();
+        $client->getCookieJar()->set(new \Symfony\Component\BrowserKit\Cookie('refresh_token', 'no-existe'));
+
+        $client->request('POST', '/api/v1/token/refresh');
+
+        self::assertResponseStatusCodeSame(401);
+    }
+
+    private function login(KernelBrowser $client, string $email, string $password): void
+    {
         $client->request(
             'POST',
             '/api/v1/login',
             [],
             [],
             ['CONTENT_TYPE' => 'application/json'],
-            json_encode(['email' => 'login@tickets.local', 'password' => 'incorrecta'], \JSON_THROW_ON_ERROR),
+            json_encode(['email' => $email, 'password' => $password], \JSON_THROW_ON_ERROR),
         );
-
-        self::assertResponseStatusCodeSame(401);
+        self::assertResponseIsSuccessful();
     }
 
     private function register(KernelBrowser $client, string $email, string $password): void
