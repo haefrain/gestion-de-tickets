@@ -9,3 +9,8 @@ api_login:
     path: /api/v1/login
     controller: App\Identity\Infrastructure\Http\LoginController
     methods: [POST]
+
+api_token_refresh:
+    path: /api/v1/token/refresh
+    controller: App\Identity\Infrastructure\Http\RefreshTokenController
+    methods: [POST]
