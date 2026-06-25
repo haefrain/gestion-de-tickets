@@ -11,5 +11,6 @@ Registro de decisiones de arquitectura. Cada ADR es inmutable: si una decisión 
 | [0005](0005-cqrs-ligero.md) | CQRS ligero (comandos / consultas) | Aceptada |
 | [0006](0006-refresh-token-en-cookie-httponly.md) | Refresh token en cookie HttpOnly con SameSite=Strict (sin token CSRF) | Aceptada |
 | [0007](0007-indexado-asincrono-y-busqueda.md) | Indexado asíncrono y búsqueda desacoplada (Search ← eventos de Ticketing) | Aceptada |
+| [0008](0008-outbox-transaccional-ticketing.md) | Outbox transaccional para los eventos de dominio de Ticketing | Aceptada |
 
 **Formato:** Contexto · Decisión · Consecuencias · Alternativas consideradas.

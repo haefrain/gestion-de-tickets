@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Ticketing\Application;
 
 use App\Tests\Support\FrozenClock;
+use App\Tests\Support\InMemoryEventOutbox;
 use App\Tests\Support\PassthroughCache;
-use App\Tests\Support\RecordingEventBus;
 use App\Tests\Support\Ticketing\InMemoryTicketRepository;
 use App\Ticketing\Application\Command\ChangeTicketStatusCommand;
 use App\Ticketing\Application\Command\ChangeTicketStatusHandler;
@@ -41,20 +41,20 @@ final class ChangeTicketStatusHandlerTest extends TestCase
     {
         $id = TicketId::generate();
         $repo = $this->repoWithOpenTicket($id);
-        $events = new RecordingEventBus();
+        $events = new InMemoryEventOutbox();
         $handler = new ChangeTicketStatusHandler($repo, $events, $this->clock(), new PassthroughCache());
 
         $handler(new ChangeTicketStatusCommand($id->value(), TicketStatus::IN_PROGRESS, 'agent-1'));
 
         self::assertSame(TicketStatus::IN_PROGRESS, $repo->ofId($id)?->status()->value());
-        self::assertCount(1, $events->published);
-        self::assertInstanceOf(TicketStatusChanged::class, $events->published[0]);
+        self::assertCount(1, $events->events);
+        self::assertInstanceOf(TicketStatusChanged::class, $events->events[0]);
     }
 
     public function testTransicionInvalidaLanzaExcepcion(): void
     {
         $id = TicketId::generate();
-        $handler = new ChangeTicketStatusHandler($this->repoWithOpenTicket($id), new RecordingEventBus(), $this->clock(), new PassthroughCache());
+        $handler = new ChangeTicketStatusHandler($this->repoWithOpenTicket($id), new InMemoryEventOutbox(), $this->clock(), new PassthroughCache());
 
         $this->expectException(InvalidTransition::class);
         $handler(new ChangeTicketStatusCommand($id->value(), TicketStatus::RESOLVED, 'agent-1'));
@@ -62,7 +62,7 @@ final class ChangeTicketStatusHandlerTest extends TestCase
 
     public function testTicketInexistenteLanzaNotFound(): void
     {
-        $handler = new ChangeTicketStatusHandler(new InMemoryTicketRepository(), new RecordingEventBus(), $this->clock(), new PassthroughCache());
+        $handler = new ChangeTicketStatusHandler(new InMemoryTicketRepository(), new InMemoryEventOutbox(), $this->clock(), new PassthroughCache());
 
         $this->expectException(TicketNotFound::class);
         $handler(new ChangeTicketStatusCommand(TicketId::generate()->value(), TicketStatus::IN_PROGRESS, 'agent-1'));

@@ -7,8 +7,8 @@ namespace App\Tests\Unit\Ticketing\Application;
 use App\Shared\Domain\ForbiddenException;
 use App\Shared\Domain\UnprocessableException;
 use App\Tests\Support\FrozenClock;
+use App\Tests\Support\InMemoryEventOutbox;
 use App\Tests\Support\PassthroughCache;
-use App\Tests\Support\RecordingEventBus;
 use App\Tests\Support\Ticketing\InMemoryTicketRepository;
 use App\Ticketing\Application\Command\UpdateTicketCommand;
 use App\Ticketing\Application\Command\UpdateTicketHandler;
@@ -23,12 +23,12 @@ use PHPUnit\Framework\TestCase;
 final class UpdateTicketHandlerTest extends TestCase
 {
     private InMemoryTicketRepository $repo;
-    private RecordingEventBus $events;
+    private InMemoryEventOutbox $events;
 
     protected function setUp(): void
     {
         $this->repo = new InMemoryTicketRepository();
-        $this->events = new RecordingEventBus();
+        $this->events = new InMemoryEventOutbox();
     }
 
     private function withTicket(TicketId $id, string $requesterId = 'cli-1'): UpdateTicketHandler
@@ -64,8 +64,8 @@ final class UpdateTicketHandlerTest extends TestCase
         self::assertNotNull($ticket);
         self::assertSame('Nuevo título', $ticket->title());
         self::assertSame('Nueva descripción', $ticket->description());
-        self::assertCount(1, $this->events->published);
-        self::assertInstanceOf(TicketEdited::class, $this->events->published[0]);
+        self::assertCount(1, $this->events->events);
+        self::assertInstanceOf(TicketEdited::class, $this->events->events[0]);
     }
 
     public function testClienteAjenoNoPuedeEditar(): void
