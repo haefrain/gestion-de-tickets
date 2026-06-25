@@ -1,0 +1,6 @@
+# nginx de producción para la API: hornea apps/api/public (front controller + estáticos) en la
+# misma ruta absoluta que usa php-fpm (/var/www/api/public), de modo que el SCRIPT_FILENAME de
+# FastCGI resuelve igual en ambos contenedores sin compartir volumen.
+FROM nginx:1.27-alpine
+COPY docker/nginx/api.conf /etc/nginx/conf.d/default.conf
+COPY apps/api/public /var/www/api/public

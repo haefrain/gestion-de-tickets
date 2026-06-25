@@ -1,0 +1,41 @@
+# Backend producción — multi-stage: dependencias sin dev + runtime php-fpm con OPcache.
+# A diferencia de Dockerfile.api (dev, que monta el código por volumen), esta imagen HORNEA
+# el código y el vendor optimizado: artefacto inmutable y reproducible para desplegar.
+
+# ── Base: PHP 8.4-FPM + extensiones del stack (sin pcov: cobertura es de CI, no de prod) ──
+FROM php:8.4-fpm AS base
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git \
+        unzip \
+        libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
+RUN install-php-extensions \
+        pdo_pgsql \
+        intl \
+        zip \
+        opcache \
+        redis \
+        amqp \
+        @composer
+WORKDIR /var/www/api
+
+# ── Vendor: instala dependencias de producción cacheando la capa por composer.lock ──
+FROM base AS vendor
+COPY apps/api/composer.json apps/api/composer.lock apps/api/symfony.lock ./
+RUN composer install --no-dev --no-scripts --no-interaction --prefer-dist --optimize-autoloader --no-progress
+
+# ── Imagen final: código + vendor + OPcache de producción ──
+FROM base AS prod
+ENV APP_ENV=prod APP_DEBUG=0
+COPY docker/php/opcache-prod.ini /usr/local/etc/php/conf.d/zz-opcache-prod.ini
+COPY apps/api ./
+COPY --from=vendor /var/www/api/vendor ./vendor
+# Autoloader autoritativo (sin fallback PSR-4 en runtime) y permisos de escritura para var/.
+RUN composer dump-autoload --no-dev --classmap-authoritative --no-interaction \
+    && mkdir -p var \
+    && chown -R www-data:www-data var
+USER www-data
+
+# La base ejecuta php-fpm en :9000; el HTTP lo sirve api-nginx (FastCGI). Las claves JWT y los
+# secretos NO se hornean: llegan por variables de entorno y por un volumen de claves en runtime.
