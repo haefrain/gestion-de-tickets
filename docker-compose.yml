@@ -83,6 +83,27 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # ── Relay del outbox de Ticketing (Symfony Console → RabbitMQ) ──
+  # Publica a RabbitMQ los eventos pendientes en ticketing_outbox y los marca como enviados
+  # (ADR 0008). --time-limit recicla el proceso (anti memory-leak); --sleep es el intervalo de
+  # sondeo cuando no hay pendientes. Complementa al worker: relay = BD→RabbitMQ, worker = RabbitMQ→ES.
+  outbox-relay:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    environment: *api_env
+    command: ["php", "bin/console", "ticketing:outbox:relay", "--time-limit=3600", "--sleep=1000", "-v"]
+    volumes:
+      - ./apps/api:/var/www/api
+    depends_on:
+      api:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
   # ── Frontend (Node 24 / Vite) ──
   web:
     build:

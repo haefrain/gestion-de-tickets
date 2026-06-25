@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Ticketing\Application;
 
+use App\Tests\Support\InMemoryEventOutbox;
 use App\Tests\Support\PassthroughCache;
-use App\Tests\Support\RecordingEventBus;
 use App\Tests\Support\Ticketing\InMemoryTicketRepository;
 use App\Ticketing\Application\Command\CreateTicketCommand;
 use App\Ticketing\Application\Command\CreateTicketHandler;
@@ -21,7 +21,7 @@ final class CreateTicketHandlerTest extends TestCase
     public function testCreaTicketEnOpenYPublicaEvento(): void
     {
         $repo = new InMemoryTicketRepository();
-        $events = new RecordingEventBus();
+        $events = new InMemoryEventOutbox();
         $handler = new CreateTicketHandler($repo, $events, new PassthroughCache());
         $id = TicketId::generate();
 
@@ -39,13 +39,13 @@ final class CreateTicketHandlerTest extends TestCase
         self::assertNotNull($ticket);
         self::assertSame(TicketStatus::OPEN, $ticket->status()->value());
         self::assertSame('requester-1', $ticket->requesterId());
-        self::assertCount(1, $events->published);
-        self::assertInstanceOf(TicketCreated::class, $events->published[0]);
+        self::assertCount(1, $events->events);
+        self::assertInstanceOf(TicketCreated::class, $events->events[0]);
     }
 
     public function testTituloVacioLanzaExcepcion(): void
     {
-        $handler = new CreateTicketHandler(new InMemoryTicketRepository(), new RecordingEventBus(), new PassthroughCache());
+        $handler = new CreateTicketHandler(new InMemoryTicketRepository(), new InMemoryEventOutbox(), new PassthroughCache());
 
         $this->expectException(\InvalidArgumentException::class);
 

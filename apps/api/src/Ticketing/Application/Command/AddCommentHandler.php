@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Ticketing\Application\Command;
 
 use App\Shared\Application\Bus\CommandHandler;
-use App\Shared\Application\Bus\EventBus;
 use App\Shared\Application\Clock\Clock;
 use App\Shared\Domain\ForbiddenException;
 use App\Ticketing\Application\Port\CommentRepository;
+use App\Ticketing\Application\Port\EventOutbox;
 use App\Ticketing\Application\Port\TicketFinder;
 use App\Ticketing\Application\Query\TicketView;
 use App\Ticketing\Domain\Comment;
@@ -26,7 +26,7 @@ final readonly class AddCommentHandler implements CommandHandler
     public function __construct(
         private TicketFinder $tickets,
         private CommentRepository $comments,
-        private EventBus $eventBus,
+        private EventOutbox $outbox,
         private Clock $clock,
     ) {
     }
@@ -43,6 +43,6 @@ final readonly class AddCommentHandler implements CommandHandler
 
         $now = $this->clock->now();
         $this->comments->add(Comment::write(CommentId::generate(), $command->ticketId, $command->actorId, $command->body, $now));
-        $this->eventBus->publish(new TicketCommented(TicketId::fromString($command->ticketId), $command->actorId, $now));
+        $this->outbox->add(new TicketCommented(TicketId::fromString($command->ticketId), $command->actorId, $now));
     }
 }

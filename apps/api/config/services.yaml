@@ -103,6 +103,11 @@ services:
         arguments:
             $eventBus: '@event.bus'
 
+    # Relay del outbox (ADR 0008): despacha al event.bus, que enruta los eventos a async_events (RabbitMQ).
+    App\Ticketing\Infrastructure\Outbox\RelayTicketingOutboxCommand:
+        arguments:
+            $eventBus: '@event.bus'
+
     # Puerto -> adaptador
     # Cache (L5): puerto -> adaptador Symfony Cache sobre el pool Redis con tags.
     App\Shared\Application\Cache\Cache: '@App\Shared\Infrastructure\Cache\SymfonyCache'
@@ -139,6 +144,8 @@ services:
 
     # ── Ticketing: puertos -> adaptadores ──
     App\Ticketing\Application\Port\TicketRepository: '@App\Ticketing\Infrastructure\Persistence\Doctrine\DoctrineTicketRepository'
+    # Outbox transaccional (ADR 0008): los casos de uso registran aquí los eventos de dominio.
+    App\Ticketing\Application\Port\EventOutbox: '@App\Ticketing\Infrastructure\Persistence\Doctrine\DoctrineEventOutbox'
     App\Ticketing\Application\Port\TicketFinder: '@App\Ticketing\Infrastructure\Persistence\Doctrine\DoctrineTicketFinder'
     App\Ticketing\Application\Port\AgentDirectory: '@App\Ticketing\Infrastructure\Identity\DoctrineAgentDirectory'
     App\Ticketing\Application\Port\AssignmentStrategy: '@App\Ticketing\Infrastructure\Identity\LeastBusyAssignment'
