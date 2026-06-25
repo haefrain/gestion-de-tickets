@@ -8,6 +8,10 @@
 .env
 .env.local
 *.env.local
+.env.prod
+
+# ── Despliegue (secretos en la VM: claves JWT, env de prod) ──
+/deploy/secrets/
 
 # ── Symfony (backend) ──
 /apps/api/var/
