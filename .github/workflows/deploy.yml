@@ -17,6 +17,9 @@ concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
+# Mínimo por defecto; cada job amplía solo lo que necesita (principio de menor privilegio).
+permissions: {}
+
 env:
   REGISTRY: ghcr.io
   IMAGE_BASE: ghcr.io/${{ github.repository }}
@@ -71,6 +74,9 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     environment: staging
+    permissions:
+      contents: read     # no hace checkout, pero baseline seguro
+      packages: read      # el token se usa en la VM para `docker login` + pull desde GHCR
     steps:
       # Las entradas (tag, actor, token) viajan por env/envs, no interpoladas en el script,
       # para evitar inyección de comandos en el shell remoto.
