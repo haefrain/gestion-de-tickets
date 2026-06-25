@@ -134,6 +134,19 @@ Disparo: manual (`workflow_dispatch`, con input `tag`) o al publicar un tag `vX.
 - **Backups:** los datos viven en volúmenes nombrados (`postgres_data`, etc.); `pg_dump` periódico
   recomendado para PostgreSQL.
 
+## Antes de producción real (endurecimiento)
+
+El entorno está dimensionado como **pruebas**. La auditoría pre-entrega dejó estos puntos de
+severidad **baja**, conscientes y acotados aquí, que **deben abordarse antes de promover a producción**:
+
+- **Pinning de actions a SHA** en `deploy.yml` (hoy a tag flotante `@vN`): evita que un tag comprometido —en especial `appleboy/ssh-action`, que maneja la `DEPLOY_SSH_KEY`— exfiltre secretos.
+- **Auth interna de Redis** (`requirepass` + credenciales en `REDIS_URL`): hoy Redis es solo interno y sin contraseña; Postgres y RabbitMQ ya las exigen.
+- **Idempotencia dura del consumo:** el dedupe es *check-then-act* (mitigado por la entrega secuencial de RabbitMQ + consumidores idempotentes por `TicketId`); para garantía estricta, *claim* por `INSERT` previo/constraint y variante `(message_id, handler)`.
+- **Retención:** purgar periódicamente `processed_messages` y las filas ya publicadas de `ticketing_outbox` para evitar *bloat*.
+- **Seguridad de Elasticsearch:** activar `xpack.security` + TLS si el clúster deja de ser interno.
+
+(Ya aplicado tras el audit: permisos mínimos en el job de deploy y cabeceras de seguridad —HSTS, `nosniff`, `X-Frame-Options`— en el `Caddyfile`.)
+
 ## Qué se validó en local
 
 - `docker compose --env-file .env.prod -f docker-compose.prod.yml config` válido (11 servicios).
