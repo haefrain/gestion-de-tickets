@@ -135,7 +135,9 @@ MAILER_DSN=$MAILER_DSN
 IMAGE_TAG=latest
 GHCR_NAMESPACE=tickets-iatsae
 EOF
-  chmod 600 .env.prod
+  # 644: el .env.prod se monta en los contenedores PHP (que corren como www-data) como /var/www/api/.env.
+  # En un entorno de pruebas es aceptable; en producción real iría por un gestor de secretos.
+  chmod 644 .env.prod
 else
   warn ".env.prod ya existe — lo conservo (no regenero secretos)."
 fi
