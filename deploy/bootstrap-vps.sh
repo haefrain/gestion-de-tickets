@@ -113,6 +113,7 @@ if [ ! -f .env.prod ]; then
 DEPLOY_DOMAIN=$DOMAIN
 ACME_EMAIL=$EMAIL
 APP_ENV=prod
+DEFAULT_URI=https://$DOMAIN
 APP_SECRET=$APP_SECRET
 POSTGRES_USER=tickets
 POSTGRES_PASSWORD=$PG_PASS
@@ -135,9 +136,9 @@ MAILER_DSN=$MAILER_DSN
 IMAGE_TAG=latest
 GHCR_NAMESPACE=tickets-iatsae
 EOF
-  # 644: el .env.prod se monta en los contenedores PHP (que corren como www-data) como /var/www/api/.env.
-  # En un entorno de pruebas es aceptable; en producción real iría por un gestor de secretos.
-  chmod 644 .env.prod
+  # El .env.prod se monta como /var/www/api/.env en los contenedores PHP (corren como www-data, uid 33).
+  # Legible solo por ese uid (640 + dueño www-data), no por todo el sistema. Fallback a 644 si no hay root.
+  chown 33:33 .env.prod 2>/dev/null && chmod 640 .env.prod || chmod 644 .env.prod
 else
   warn ".env.prod ya existe — lo conservo (no regenero secretos)."
 fi
