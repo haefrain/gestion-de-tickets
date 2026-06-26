@@ -5,7 +5,7 @@
 
 ## Contexto
 
-El ADR 0007 difiere el envío de eventos al broker con `DispatchAfterCurrentBusStamp`: el `MessengerEventBus` retiene el envío hasta que el `doctrine_transaction` del `command.bus` confirma, de modo que el worker nunca consume un ticket sin commitear. Pero ese mismo ADR admite una ventana abierta (consecuencia − de la línea 29):
+El ADR 0007 difiere el envío de eventos al broker con `DispatchAfterCurrentBusStamp`: el `MessengerEventBus` retiene el envío hasta que el `doctrine_transaction` del `command.bus` confirma, de modo que el worker nunca consume un ticket sin commitear. Pero ese mismo ADR reconoce una ventana abierta entre sus consecuencias:
 
 > *No es un transactional outbox completo: `DispatchAfterCurrentBus` cubre el orden commit→publish, pero si el proceso muere **entre** el commit y el envío al broker, ese evento se pierde.*
 

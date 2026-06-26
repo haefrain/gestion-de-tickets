@@ -4,7 +4,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Borrador v0.1 |
+| **Estado** | Estable · v1.0 |
 | **Fecha** | 2026-06-22 |
 | **Estrategia** | Cache-aside (lazy loading) |
 | **Componente** | Symfony Cache (adaptador Redis) tras el puerto `Cache` |

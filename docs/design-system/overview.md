@@ -4,7 +4,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Borrador v0.1 |
+| **Estado** | Estable · v1.0 |
 | **Fecha** | 2026-06-22 |
 | **Base** | MUI (Material UI) · React 19 · TypeScript · Vite |
 | **Datos** | TanStack Query · **Tema** claro + oscuro (índigo) · **Storybook** |

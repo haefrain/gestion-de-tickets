@@ -4,7 +4,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Borrador v0.1 |
+| **Estado** | Estable · v1.0 |
 | **Fecha** | 2026-06-22 |
 | **Mecanismo** | JWT (access + refresh) · RBAC |
 | **Relacionados** | [`api/api-design.md`](api/api-design.md) · [`platform/redis.md`](platform/redis.md) |

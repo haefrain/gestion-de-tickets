@@ -4,7 +4,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Borrador v0.1 |
+| **Estado** | Estable · v1.0 |
 | **Fecha** | 2026-06-22 |
 | **Alcance** | Solo patrones **aplicados** en el proyecto, con su caso real y su anti-caso |
 | **Relacionados** | [`architecture/overview.md`](overview.md) · [ADRs](adr/README.md) |
