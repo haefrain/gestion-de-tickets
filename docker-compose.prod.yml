@@ -67,6 +67,8 @@ services:
     env_file:
       - .env.prod
     command: ["php", "bin/console", "doctrine:migrations:migrate", "--no-interaction", "--allow-no-migration"]
+    volumes:
+      - ./.env.prod:/var/www/api/.env:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -82,6 +84,7 @@ services:
       - .env.prod
     volumes:
       - ./deploy/secrets/jwt:/var/www/api/config/jwt:ro
+      - ./.env.prod:/var/www/api/.env:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -111,6 +114,7 @@ services:
       - .env.prod
     volumes:
       - ./deploy/secrets/jwt:/var/www/api/config/jwt:ro
+      - ./.env.prod:/var/www/api/.env:ro
     command: ["php", "bin/console", "messenger:consume", "async_events", "--time-limit=3600", "--memory-limit=128M", "-v"]
     depends_on:
       api:
@@ -131,6 +135,7 @@ services:
       - .env.prod
     volumes:
       - ./deploy/secrets/jwt:/var/www/api/config/jwt:ro
+      - ./.env.prod:/var/www/api/.env:ro
     command: ["php", "bin/console", "ticketing:outbox:relay", "--time-limit=3600", "--sleep=1000", "-v"]
     depends_on:
       api:
