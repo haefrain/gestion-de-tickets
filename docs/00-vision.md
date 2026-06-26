@@ -4,7 +4,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Borrador v0.1 |
+| **Estado** | Estable · v1.0 |
 | **Fecha** | 2026-06-22 |
 | **Documentos relacionados** | [`ROADMAP.md`](../ROADMAP.md) · [`docs/product/backlog.md`](product/backlog.md) · [`docs/01-glosario.md`](01-glosario.md) |
 

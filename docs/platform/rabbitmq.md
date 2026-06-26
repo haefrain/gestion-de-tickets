@@ -4,7 +4,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Borrador v0.1 |
+| **Estado** | Estable · v1.0 |
 | **Fecha** | 2026-06-22 |
 | **Abstracción** | Symfony Messenger (transporte AMQP) |
 | **Topología** | Una cola por propósito + DLQ |

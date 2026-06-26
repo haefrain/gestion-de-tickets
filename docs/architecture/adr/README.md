@@ -1,6 +1,6 @@
 # Architecture Decision Records (ADR)
 
-Registro de decisiones de arquitectura. Cada ADR es inmutable: si una decisión cambia, se crea una nueva que *supersede* a la anterior.
+Registro de decisiones de arquitectura. La **decisión** de cada ADR es inmutable: si cambia, se crea uno nuevo que *supersede* al anterior. Una consecuencia ya superada puede recibir un puntero al ADR que la resuelve.
 
 | # | Decisión | Estado |
 |---|---|---|

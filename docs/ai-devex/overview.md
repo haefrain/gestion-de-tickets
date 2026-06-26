@@ -4,7 +4,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Borrador v0.1 |
+| **Estado** | Estable · v1.0 |
 | **Fecha** | 2026-06-22 |
 | **Permisos** | Amplio (auto-aprobar salvo destructivos) |
 | **Entorno** | Solo local (no productivo) |

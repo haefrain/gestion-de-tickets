@@ -6,7 +6,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Borrador v0.1 |
+| **Estado** | Estable · v1.0 |
 | **Fecha** | 2026-06-22 |
 | **Ya hecho** | Definición F0–F8 · backlog rico (38 HU) · `CLAUDE.md` (raíz + apps) |
 | **Primer corte** | 23 HU `Must` |

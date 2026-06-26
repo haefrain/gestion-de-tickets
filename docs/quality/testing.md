@@ -4,7 +4,7 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Borrador v0.1 |
+| **Estado** | Estable · v1.0 |
 | **Fecha** | 2026-06-22 |
 | **Cobertura** | **80% bloqueante** en dominio + aplicación |
 | **Niveles** | Unit · Integración · E2E |
