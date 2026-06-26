@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Ticketing\Application\Command;
 
 use App\Shared\Application\Bus\CommandHandler;
-use App\Shared\Application\Bus\EventBus;
 use App\Shared\Application\Cache\Cache;
 use App\Shared\Application\Clock\Clock;
 use App\Shared\Domain\ForbiddenException;
 use App\Shared\Domain\UnprocessableException;
 use App\Ticketing\Application\CacheKeys;
+use App\Ticketing\Application\Port\EventOutbox;
 use App\Ticketing\Application\Port\TicketRepository;
 use App\Ticketing\Domain\Category;
 use App\Ticketing\Domain\Exception\TicketNotFound;
@@ -27,7 +27,7 @@ final readonly class UpdateTicketHandler implements CommandHandler
 {
     public function __construct(
         private TicketRepository $tickets,
-        private EventBus $eventBus,
+        private EventOutbox $outbox,
         private Clock $clock,
         private Cache $cache,
     ) {
@@ -66,6 +66,6 @@ final readonly class UpdateTicketHandler implements CommandHandler
         $this->tickets->save($ticket);
         $this->cache->delete(CacheKeys::ticket($command->ticketId));
         $this->cache->invalidateTags([CacheKeys::TICKETS_TAG]);
-        $this->eventBus->publish(...$ticket->pullDomainEvents());
+        $this->outbox->add(...$ticket->pullDomainEvents());
     }
 }

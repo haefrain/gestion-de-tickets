@@ -6,7 +6,7 @@ namespace App\Tests\Unit\Ticketing\Application;
 
 use App\Shared\Domain\ForbiddenException;
 use App\Tests\Support\FrozenClock;
-use App\Tests\Support\RecordingEventBus;
+use App\Tests\Support\InMemoryEventOutbox;
 use App\Tests\Support\Ticketing\FakeCommentRepository;
 use App\Tests\Support\Ticketing\InMemoryTicketFinder;
 use App\Ticketing\Application\Command\AddCommentCommand;
@@ -21,13 +21,13 @@ final class AddCommentHandlerTest extends TestCase
 {
     private InMemoryTicketFinder $tickets;
     private FakeCommentRepository $comments;
-    private RecordingEventBus $events;
+    private InMemoryEventOutbox $events;
 
     protected function setUp(): void
     {
         $this->tickets = new InMemoryTicketFinder();
         $this->comments = new FakeCommentRepository();
-        $this->events = new RecordingEventBus();
+        $this->events = new InMemoryEventOutbox();
     }
 
     private function handler(): AddCommentHandler
@@ -51,8 +51,8 @@ final class AddCommentHandlerTest extends TestCase
 
         self::assertCount(1, $this->comments->comments);
         self::assertSame('Mi comentario', $this->comments->comments[0]->body());
-        self::assertCount(1, $this->events->published);
-        self::assertInstanceOf(TicketCommented::class, $this->events->published[0]);
+        self::assertCount(1, $this->events->events);
+        self::assertInstanceOf(TicketCommented::class, $this->events->events[0]);
     }
 
     public function testUnAgenteComentaCualquierTicket(): void

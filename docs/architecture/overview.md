@@ -132,25 +132,29 @@ La búsqueda (`SearchTickets`) lee del índice de Elasticsearch, no del modelo d
 sequenceDiagram
     participant C as Cliente (SPA)
     participant Ctrl as TicketController (Infra)
-    participant Bus as CommandBus
+    participant Bus as CommandBus (doctrine_transaction)
     participant H as CreateTicketHandler (App)
     participant T as Ticket (Domain)
     participant Repo as TicketRepository (port→Doctrine)
-    participant MQ as EventBus → RabbitMQ
+    participant OB as EventOutbox (port→Doctrine)
+    participant Relay as ticketing:outbox:relay
+    participant MQ as RabbitMQ
 
-    C->>Ctrl: POST /api/tickets (JWT)
+    C->>Ctrl: POST /api/v1/tickets (JWT)
     Ctrl->>Bus: CreateTicketCommand
-    Bus->>H: handle()
+    Bus->>H: handle() — abre transacción
     H->>T: Ticket::create(...)
     T-->>H: registra TicketCreated
     H->>Repo: save(ticket)
-    Repo-->>H: ok
-    H->>MQ: despacha TicketCreated
+    H->>OB: add(TicketCreated)
+    Note over Bus,OB: ticket y evento en la MISMA transacción → commit atómico
     Ctrl-->>C: 201 Created (TicketId)
-    Note over MQ: Workers indexan (Search) y notifican (Notifications)
+    Relay->>OB: SELECT pendientes (FOR UPDATE SKIP LOCKED)
+    Relay->>MQ: publica TicketCreated (+OutboxIdStamp) y marca published_at
+    Note over MQ: Workers indexan (Search) y notifican (Notifications); dedupe por message_id
 ```
 
-El request HTTP responde sin esperar al indexado ni a la notificación (ver F5).
+El request HTTP responde sin esperar al indexado ni a la notificación. El evento se persiste en el outbox dentro de la misma transacción que el ticket (sin pérdida) y el relay lo publica después; ver [ADR 0008](adr/0008-outbox-transaccional-ticketing.md).
 
 ## 9. Decisiones de arquitectura
 
@@ -161,6 +165,9 @@ Registradas como ADR en [`adr/`](adr/README.md):
 3. ADR 0003 — Identificadores UUID v7
 4. ADR 0004 — Dominio puro desacoplado de Doctrine
 5. ADR 0005 — CQRS ligero (comandos/consultas)
+6. ADR 0006 — Refresh token en cookie HttpOnly (SameSite=Strict)
+7. ADR 0007 — Indexado asíncrono y búsqueda desacoplada
+8. ADR 0008 — Outbox transaccional para los eventos de Ticketing
 
 ## 10. Pendiente de iterar
 

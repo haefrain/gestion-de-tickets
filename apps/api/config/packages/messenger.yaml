@@ -12,11 +12,14 @@ framework:
                 default_middleware:
                     enabled: true
                     allow_no_handlers: false
-            # Eventos de dominio: async; en F2 aún no hay consumidores.
+            # Eventos de dominio: async vía RabbitMQ. El middleware de idempotencia (ADR 0008)
+            # deduplica el consumo: un mensaje del outbox reentregado no se procesa dos veces.
             event.bus:
                 default_middleware:
                     enabled: true
                     allow_no_handlers: true
+                middleware:
+                    - App\Shared\Infrastructure\Messenger\IdempotentMessageMiddleware
 
         transports:
             # Transporte async para eventos de dominio (RabbitMQ, cola "indexing" del worker).
