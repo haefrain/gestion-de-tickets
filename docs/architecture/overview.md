@@ -4,9 +4,9 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | Borrador v0.1 |
-| **Fecha** | 2026-06-22 |
-| **Decisiones** | [ADR 0001–0005](adr/README.md) |
+| **Estado** | Estable · v1.0 |
+| **Fecha** | 2026-06-26 |
+| **Decisiones** | [ADR 0001–0008](adr/README.md) |
 | **Relacionados** | [`ROADMAP.md`](../../ROADMAP.md) · [`docs/01-glosario.md`](../01-glosario.md) |
 
 ## 1. Estilo arquitectónico
@@ -53,8 +53,8 @@ Cuatro contextos con un *context map* explícito.
 ```mermaid
 flowchart LR
     Identity -- identidad / roles --> Ticketing
-    Ticketing -- TicketCreated / StatusChanged / Assigned --> Search
-    Ticketing -- TicketCreated / StatusChanged / Assigned --> Notifications
+    Ticketing -- eventos de dominio --> Search
+    Ticketing -- eventos de dominio --> Notifications
 ```
 
 La comunicación entre contextos es por **eventos de dominio** (desacople), no por llamadas directas.
@@ -109,7 +109,7 @@ apps/api/src/
 | `requesterId` | `UserId` | cliente que lo crea |
 | `assigneeId` | `UserId?` | agente responsable (opcional) |
 | `comments` | `Comment[]` | entidad hija |
-| eventos | Domain Events | `TicketCreated`, `TicketStatusChanged`, `TicketAssigned`, `TicketCommented` |
+| eventos | Domain Events | `TicketCreated`, `TicketStatusChanged`, `TicketAssigned`, `TicketEdited`, `TicketCommented` |
 
 **Invariantes** (garantizadas por el agregado):
 
@@ -171,6 +171,5 @@ Registradas como ADR en [`adr/`](adr/README.md):
 
 ## 10. Pendiente de iterar
 
-- Detallar el modelo de Identity, Search y Notifications al nivel de Ticketing.
-- Definir el manejo de errores de dominio → respuestas HTTP (enlaza F4).
-- Confirmar librería de buses (Messenger como command/query/event bus vs buses propios).
+- Detallar el modelo de dominio de Identity, Search y Notifications al nivel de Ticketing
+  (este documento se centra en el *core*).
