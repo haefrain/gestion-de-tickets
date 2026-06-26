@@ -1,0 +1,36 @@
+# Edge del entorno de pruebas: TLS automático (Let's Encrypt) y enrutado por path.
+# Caddy obtiene y renueva el certificado solo si DEPLOY_DOMAIN es un dominio público real con
+# los puertos 80/443 accesibles. En local, con DEPLOY_DOMAIN=localhost, usa su CA interna.
+
+{
+	# Email para ACME (avisos de expiración). Si se deja vacío, Caddy igualmente emite el cert.
+	email {$ACME_EMAIL}
+}
+
+{$DEPLOY_DOMAIN:localhost} {
+	encode zstd gzip
+
+	# Cabeceras de seguridad (docs/security.md). HSTS solo lo honra el navegador sobre HTTPS.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# La API y el resto del backend HTTP van a nginx → php-fpm.
+	handle /api/* {
+		reverse_proxy api-nginx:80
+	}
+
+	# Todo lo demás es la SPA estática.
+	handle {
+		reverse_proxy web:80
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

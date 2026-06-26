@@ -1,0 +1,219 @@
+# Despliegue de pruebas — compose AUTOCONTENIDO (no es un override de docker-compose.yml).
+# Diferencias clave frente a dev: imágenes horneadas (sin montar código), Caddy como único
+# punto expuesto (TLS automático), servicios de datos sin puertos publicados, y un one-shot de
+# migración que corre antes de que la API atienda.
+#
+# Uso:  docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
+name: tickets-iatsae-prod
+
+services:
+  # ── Edge: TLS automático + enrutado por path ──
+  caddy:
+    image: caddy:2-alpine
+    environment:
+      DEPLOY_DOMAIN: ${DEPLOY_DOMAIN:-localhost}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+      api-nginx:
+        condition: service_started
+    restart: unless-stopped
+
+  # ── Frontend estático (SPA construida con Vite) ──
+  web:
+    image: ${GHCR_NAMESPACE:-tickets-iatsae}/web:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web.prod
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # ── Backend HTTP (nginx → php-fpm) ──
+  api-nginx:
+    image: ${GHCR_NAMESPACE:-tickets-iatsae}/api-nginx:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api-nginx.prod
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/api/v1/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  # ── Migraciones (one-shot): corre antes de que la API quede sana ──
+  api-migrate:
+    image: ${GHCR_NAMESPACE:-tickets-iatsae}/api:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api.prod
+    env_file:
+      - .env.prod
+    command: ["php", "bin/console", "doctrine:migrations:migrate", "--no-interaction", "--allow-no-migration"]
+    volumes:
+      - ./.env.prod:/var/www/api/.env:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  # ── Backend (PHP 8.4-FPM) ──
+  api:
+    image: ${GHCR_NAMESPACE:-tickets-iatsae}/api:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api.prod
+    env_file:
+      - .env.prod
+    volumes:
+      - ./deploy/secrets/jwt:/var/www/api/config/jwt:ro
+      - ./.env.prod:/var/www/api/.env:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      api-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "php -v >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  # ── Worker async (RabbitMQ → Elasticsearch / Notifications) ──
+  worker:
+    image: ${GHCR_NAMESPACE:-tickets-iatsae}/api:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api.prod
+    env_file:
+      - .env.prod
+    volumes:
+      - ./deploy/secrets/jwt:/var/www/api/config/jwt:ro
+      - ./.env.prod:/var/www/api/.env:ro
+    command: ["php", "bin/console", "messenger:consume", "async_events", "--time-limit=3600", "--memory-limit=128M", "-v"]
+    depends_on:
+      api:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Relay del outbox (BD → RabbitMQ) — ADR 0008 ──
+  outbox-relay:
+    image: ${GHCR_NAMESPACE:-tickets-iatsae}/api:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api.prod
+    env_file:
+      - .env.prod
+    volumes:
+      - ./deploy/secrets/jwt:/var/www/api/config/jwt:ro
+      - ./.env.prod:/var/www/api/.env:ro
+    command: ["php", "bin/console", "ticketing:outbox:relay", "--time-limit=3600", "--sleep=1000", "-v"]
+    depends_on:
+      api:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── PostgreSQL (interno, sin puerto publicado) ──
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-tickets}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?define POSTGRES_PASSWORD en .env.prod}
+      POSTGRES_DB: ${POSTGRES_DB:-tickets}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # ── Redis (interno) ──
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  # ── RabbitMQ (interno; panel de gestión no publicado) ──
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-tickets}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?define RABBITMQ_DEFAULT_PASS en .env.prod}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ── Elasticsearch (interno; seguridad off, asumible en entorno de pruebas) ──
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  elasticsearch_data:
+  caddy_data:
+  caddy_config:

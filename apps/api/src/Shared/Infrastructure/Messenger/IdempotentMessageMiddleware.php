@@ -31,10 +31,10 @@ final readonly class IdempotentMessageMiddleware implements MiddlewareInterface
     public function handle(Envelope $envelope, StackInterface $stack): Envelope
     {
         $idStamp = $envelope->last(OutboxIdStamp::class);
-        $received = $envelope->last(ReceivedStamp::class) instanceof \Symfony\Component\Messenger\Stamp\StampInterface;
+        $fromTransport = $envelope->last(ReceivedStamp::class) instanceof ReceivedStamp;
 
-        // Sin ReceivedStamp (dispatch) o sin identidad de mensaje: no hay nada que deduplicar.
-        if (!$received || !$idStamp instanceof OutboxIdStamp) {
+        // Sin ReceivedStamp es un dispatch (no un consumo); sin identidad de mensaje no hay qué deduplicar.
+        if (!$fromTransport || !$idStamp instanceof OutboxIdStamp) {
             return $stack->next()->handle($envelope, $stack);
         }
 
